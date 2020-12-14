@@ -112,16 +112,16 @@ class custom_build_ext(build_ext):
 
 
 include_dirs = [
-    "src/exoplanet/theano_ops/lib/include",
-    "src/exoplanet/theano_ops/lib/vendor/eigen",
+    "src/exoplanet_core/lib/include",
+    "src/exoplanet_core/lib/vendor/eigen",
     get_numpy_include(),
     get_pybind_include(),
     get_pybind_include(user=True),
 ]
 ext_modules = [
     Extension(
-        "exoplanet.theano_ops.driver",
-        ["src/exoplanet/theano_ops/driver.cpp"],
+        "exoplanet_core.driver",
+        ["src/exoplanet_core/driver.cpp"],
         include_dirs=include_dirs,
         language="c++",
     )
