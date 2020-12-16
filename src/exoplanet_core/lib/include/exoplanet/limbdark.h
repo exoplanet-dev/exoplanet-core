@@ -82,7 +82,7 @@ inline void quad_solution_vector(const Scalar& b_, const Scalar& r, Scalar* s, S
   Scalar k = INFINITY;
   Scalar kc = 1;
   Scalar kcsq = 1;
-  Scalar kkc = INFINITY;
+  // Scalar kkc = INFINITY;
   Scalar invksq = 0;
   Scalar kap0 = 0;
   Scalar kap1 = 0;
@@ -101,7 +101,7 @@ inline void quad_solution_vector(const Scalar& b_, const Scalar& r, Scalar* s, S
     if (ksq > 1) {
       kcsq = onembpr2 * onembmr2inv;
       kc = sqrt(kcsq);
-      kkc = k * kc;
+      // kkc = k * kc;
       s[0] = M_PI * (1 - r2);
       if constexpr (ComputeGradient) {
         // dsdb[0] = 0;
@@ -110,7 +110,7 @@ inline void quad_solution_vector(const Scalar& b_, const Scalar& r, Scalar* s, S
     } else {
       kcsq = -onembpr2 * invfourbr;
       kc = sqrt(kcsq);
-      kkc = kite_area2 * invfourbr;
+      // kkc = kite_area2 * invfourbr;
       kap0 = atan2(kite_area2, (r - 1) * (r + 1) + b2);
       kap1 = atan2(kite_area2, (1 - r) * (1 + r) + b2);
       Scalar Alens = kap1 + r2 * kap0 - kite_area2 * 0.5;
