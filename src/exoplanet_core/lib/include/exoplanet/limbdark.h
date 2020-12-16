@@ -79,7 +79,7 @@ inline void quad_solution_vector(const Scalar& b_, const Scalar& r, Scalar* s, S
   Scalar kite_area2 = sqrt(max<Scalar>(0.0, sqarea));
 
   Scalar ksq = INFINITY;
-  Scalar k = INFINITY;
+  // Scalar k = INFINITY;
   Scalar kc = 1;
   Scalar kcsq = 1;
   // Scalar kkc = INFINITY;
@@ -97,7 +97,7 @@ inline void quad_solution_vector(const Scalar& b_, const Scalar& r, Scalar* s, S
   } else {
     ksq = onembpr2 * invfourbr + 1.0;
     invksq = 1.0 / ksq;
-    k = sqrt(ksq);
+    // k = sqrt(ksq);
     if (ksq > 1) {
       kcsq = onembpr2 * onembmr2inv;
       kc = sqrt(kcsq);
