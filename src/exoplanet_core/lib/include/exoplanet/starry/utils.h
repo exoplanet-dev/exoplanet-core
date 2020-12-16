@@ -8,10 +8,9 @@
 #define _EXOPLANET_STARRY_UTILS_H_
 
 // Includes
-#include <stdlib.h>
-
 #include <Eigen/Core>
 #include <cmath>
+#include <cstdlib>
 #include <iostream>
 #include <unsupported/Eigen/AutoDiff>
 

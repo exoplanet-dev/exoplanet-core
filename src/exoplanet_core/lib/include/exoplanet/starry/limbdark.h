@@ -13,8 +13,8 @@
 #include <cmath>
 #include <iostream>
 
-#include "exoplanet/starry/ellip.h"
-#include "exoplanet/starry/utils.h"
+#include "ellip.h"
+#include "utils.h"
 
 namespace exoplanet {
 namespace starry {
@@ -27,7 +27,7 @@ using namespace utils;
 /**
 Return (something like the) Wallis ratio,
 
-    Gamma(1 + n / 2) / Gamma(3 / 2 + n / 2)
+Gamma(1 + n / 2) / Gamma(3 / 2 + n / 2)
 
 Computes it recursively. Using double precision, the error is
 below 1e-14 well past n = 100.
@@ -158,7 +158,7 @@ class GreensLimbDark {
   inline void downwardN();
 
   template <bool GRADIENT = false>
-  inline void compute(const T& b_, const T& r_);
+  inline void compute(const T &b_, const T &r_);
 };
 
 /**
@@ -369,7 +369,6 @@ inline void GreensLimbDark<T>::downwardM() {
       M(lmax - 3 + j) = val * fac;
       fac *= sqonembmr2;
     }
-
   } else {
     throw std::runtime_error("Downward recursion in `M` not implemented for `k^2` >= 1.");
   }
@@ -467,7 +466,6 @@ inline void GreensLimbDark<T>::downwardN() {
       N(lmax - 1 + j) = val * fac;
       fac *= sqonembmr2;
     }
-
   } else {
     throw std::runtime_error("Downward recursion in `N` not implemented for `k^2` >= 1.");
   }
@@ -487,7 +485,7 @@ Compute the `s^T` occultation solution vector
 */
 template <class T>
 template <bool GRADIENT>
-inline void GreensLimbDark<T>::compute(const T& b_, const T& r_) {
+inline void GreensLimbDark<T>::compute(const T &b_, const T &r_) {
   // Initialize the basic variables
   b = b_;
   r = r_;

@@ -1,0 +1,12 @@
+# -*- coding: utf-8 -*-
+
+__all__ = ["__version__", "driver"]
+
+from . import driver
+from .exoplanet_core_version import __version__
+
+__uri__ = "https://docs.exoplanet.codes"
+__author__ = "Daniel Foreman-Mackey"
+__email__ = "foreman.mackey@gmail.com"
+__license__ = "MIT"
+__description__ = "The compiled backend for exoplanet"
