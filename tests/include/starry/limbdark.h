@@ -7,8 +7,8 @@
 
 */
 
-#ifndef _EXOPLANET_STARRY_LIMBDARK_H_
-#define _EXOPLANET_STARRY_LIMBDARK_H_
+#ifndef _EXOPLANET_TEST_STARRY_LIMBDARK_H_
+#define _EXOPLANET_TEST_STARRY_LIMBDARK_H_
 
 #include <cmath>
 #include <iostream>
@@ -17,7 +17,7 @@
 #include "utils.h"
 
 namespace exoplanet {
-namespace starry {
+namespace test {
 namespace limbdark {
 
 using std::abs;
@@ -686,7 +686,7 @@ inline void GreensLimbDark<T>::compute(const T &b_, const T &r_) {
 }
 
 }  // namespace limbdark
-}  // namespace starry
+}  // namespace test
 }  // namespace exoplanet
 
 #endif

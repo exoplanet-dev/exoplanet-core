@@ -14,19 +14,20 @@ Based in part on Daniel Foreman-Mackey's
 
 */
 
-#ifndef _EXOPLANET_STARRY_ELLIP_H_
-#define _EXOPLANET_STARRY_ELLIP_H_
+#ifndef _EXOPLANET_TEST_STARRY_ELLIP_H_
+#define _EXOPLANET_TEST_STARRY_ELLIP_H_
 
 #include <cmath>
-#include "exoplanet/starry/utils.h"
+
+#include "utils.h"
 
 namespace exoplanet {
-namespace starry {
+namespace test {
 namespace ellip {
 
 using std::abs;
-using utils::pi;
 using utils::mach_eps;
+using utils::pi;
 
 /**
 Computes the function `cel(kc, p, a, b)` from Bulirsch (1969)
@@ -95,8 +96,7 @@ T CEL(T ksq, T kc, T p, T a, T b) {
     p += g;
     g = m;
     m += kc;
-    if (abs(g - kc) < g * ca)
-      return 0.5 * pi<T>() * (a * m + b) / (m * (m + p));
+    if (abs(g - kc) < g * ca) return 0.5 * pi<T>() * (a * m + b) / (m * (m + p));
   }
   throw std::runtime_error("Elliptic integral CEL did not converge.");
 }
@@ -124,12 +124,11 @@ This assumes first value of a and b uses p; the rest have p = 1.
 
 */
 template <typename T>
-inline void CEL(T k2, T kc, T p, T a1, T a2, T a3, T b1, T b2, T b3, T& Piofk,
-                T& Eofk, T& Em1mKdm) {
+inline void CEL(T k2, T kc, T p, T a1, T a2, T a3, T b1, T b2, T b3, T& Piofk, T& Eofk,
+                T& Em1mKdm) {
   // Bounds checks
   if (unlikely(k2 > 1))
-    throw std::invalid_argument(
-        "Invalid value of `k2` passed to `ellip::CEL`.");
+    throw std::invalid_argument("Invalid value of `k2` passed to `ellip::CEL`.");
   else if (unlikely((k2 == 1.0) || (kc == 0.0)))
     kc = mach_eps<T>() * k2;
   else if (unlikely(k2 < mach_eps<T>()))
@@ -183,8 +182,7 @@ inline void CEL(T k2, T kc, T p, T a1, T a2, T a3, T b1, T b2, T b3, T& Piofk,
   g1 = m;
   m += kc;
   size_t iter = 0;
-  while (((abs(g - kc) > g * ca) || (abs(g1 - kc) > g1 * ca)) &&
-         (iter < STARRY_ELLIP_MAX_ITER)) {
+  while (((abs(g - kc) > g * ca) || (abs(g1 - kc) > g1 * ca)) && (iter < STARRY_ELLIP_MAX_ITER)) {
     kc = sqrt(ee);
     kc += kc;
     ee = kc * m;
@@ -218,7 +216,7 @@ inline void CEL(T k2, T kc, T p, T a1, T a2, T a3, T b1, T b2, T b3, T& Piofk,
 }
 
 }  // namespace ellip
-}  // namespace starry
+}  // namespace test
 }  // namespace exoplanet
 
 #endif

@@ -1,175 +1,274 @@
 #ifndef _EXOPLANET_KEPLER_H_
 #define _EXOPLANET_KEPLER_H_
 
-// A solver for Kepler's equation based on:
-//
-// Nijenhuis (1991)
-// http://adsabs.harvard.edu/abs/1991CeMDA..51..319N
-//
-// and
-//
-// Markley (1995)
-// http://adsabs.harvard.edu/abs/1995CeMDA..63..101M
+/*
+ * C code to compute the eccentric anomaly, its sine and cosine, from
+ * an input mean anomaly and eccentricity.  Timothy D. Brandt wrote
+ * the code; the algorithm is based on Raposo-Pulido & Pelaez, 2017,
+ * MNRAS, 467, 1702.  Computational cost is equivalent to around 3
+ * trig calls (sine, cosine) in tests as of August 2020.  This can be
+ * further reduced if using many mean anomalies at fixed eccentricity;
+ * the code would need some modest refactoring in that case.  Accuracy
+ * should be within a factor of a few of machine epsilon in E-ecc*sinE
+ * and in cosE up to at least ecc=0.999999.
+ */
 
 #include <cmath>
+#include <cstdlib>
 
 namespace exoplanet {
-namespace kepler {
+namespace calcEA {
 
-// Calculates x - sin(x) and 1 - cos(x) to 20 significant digits for x in [0,
-// pi)
-template <typename T>
-inline void sin_cos_reduc(T x, T* SnReduc, T* CsReduc) {
-  const T s[] = {1.0 / 6,   1.0 / 20,  1.0 / 42,  1.0 / 72,  1.0 / 110,
-                 1.0 / 156, 1.0 / 210, 1.0 / 272, 1.0 / 342, 1.0 / 420};
-  const T c[] = {0.5,       1.0 / 12,  1.0 / 30,  1.0 / 56,  1.0 / 90,
-                 1.0 / 132, 1.0 / 182, 1.0 / 240, 1.0 / 306, 1.0 / 380};
+const double one_sixth = 1. / 6;
 
-  bool bigg = x > M_PI_2;
-  T u = (bigg) ? M_PI - x : x;
-  bool big = u > M_PI_2;
-  T v = (big) ? M_PI_2 - u : u;
-  T w = v * v;
+const double if3 = 1. / 6;
+const double if5 = 1. / (6. * 20);
+const double if7 = 1. / (6. * 20 * 42);
+const double if9 = 1. / (6. * 20 * 42 * 72);
+const double if11 = 1. / (6. * 20 * 42 * 72 * 110);
+const double if13 = 1. / (6. * 20 * 42 * 72 * 110 * 156);
+const double if15 = 1. / (6. * 20 * 42 * 72 * 110 * 156 * 210);
 
-  T ss = T(1);
-  T cc = T(1);
-  for (int i = 9; i >= 1; --i) {
-    ss = 1 - w * s[i] * ss;
-    cc = 1 - w * c[i] * cc;
-  }
-  ss *= v * w * s[0];
-  cc *= w * c[0];
+const double pi = 3.14159265358979323846264338327950288;
+const double pi_d_12 = 3.14159265358979323846264338327950288 / 12;
+const double pi_d_6 = 3.14159265358979323846264338327950288 / 6;
+const double pi_d_4 = 3.14159265358979323846264338327950288 / 4;
+const double pi_d_3 = 3.14159265358979323846264338327950288 / 3;
+const double fivepi_d_12 = 3.14159265358979323846264338327950288 * 5. / 12;
+const double pi_d_2 = 3.14159265358979323846264338327950288 / 2;
+const double sevenpi_d_12 = 3.14159265358979323846264338327950288 * 7. / 12;
+const double twopi_d_3 = 3.14159265358979323846264338327950288 * 2. / 3;
+const double threepi_d_4 = 3.14159265358979323846264338327950288 * 3. / 4;
+const double fivepi_d_6 = 3.14159265358979323846264338327950288 * 5. / 6;
+const double elevenpi_d_12 = 3.14159265358979323846264338327950288 * 11. / 12;
+const double twopi = 3.14159265358979323846264338327950288 * 2;
 
-  if (big) {
-    *SnReduc = u - 1 + cc;
-    *CsReduc = 1 - M_PI_2 + u + ss;
+/*
+ * Evaluate sine with a series expansion.  We can guarantee that the
+ * argument will be <=pi/4, and this reaches double precision (within
+ * a few machine epsilon) at a signficantly lower cost than the
+ * function call to sine that obeys the IEEE standard.
+ */
+
+inline double shortsin(double x) {
+  double x2 = x * x;
+  return x *
+         (1 - x2 * (if3 -
+                    x2 * (if5 - x2 * (if7 - x2 * (if9 - x2 * (if11 - x2 * (if13 - x2 * if15)))))));
+}
+
+/*
+ * Modulo 2pi: works best when you use an increment so that the
+ * argument isn't too much larger than 2pi.
+ */
+double MAmod(double M) {
+  if (M < twopi && M >= 0) return M;
+
+  if (M > twopi) {
+    M -= twopi;
+    if (M > twopi)
+      return fmod(M, twopi);
+    else
+      return M;
   } else {
-    *SnReduc = ss;
-    *CsReduc = cc;
-  }
-  if (bigg) {
-    *SnReduc = 2 * x - M_PI + *SnReduc;
-    *CsReduc = 2 - *CsReduc;
+    M += twopi;
+    if (M < 0)
+      return fmod(M, twopi) + twopi;
+    else
+      return M;
   }
 }
 
-// Implementation from numpy
-template <typename T>
-inline T npy_mod(T a, T b) {
-  T mod = fmod(a, b);
+/*
+ * Use the second-order series expanion in Raposo-Pulido & Pelaez
+ * (2017) in the singular corner (eccentricity close to 1, mean
+ * anomaly close to zero).
+ */
 
-  if (!b) {
-    // If b == 0, return result of fmod. For IEEE is nan
-    return mod;
+double EAstart(double M, double ecc) {
+  double ome = 1. - ecc;
+  double sqrt_ome = sqrt(ome);
+
+  double chi = M / (sqrt_ome * ome);
+  double Lam = sqrt(8 + 9 * chi * chi);
+  double S = cbrt(Lam + 3 * chi);
+  double sigma = 6 * chi / (2 + S * S + 4. / (S * S));
+  double s2 = sigma * sigma;
+
+  double denom = s2 + 2;
+  double E = sigma * (1 + s2 * ome *
+                              ((s2 + 20) / (60. * denom) +
+                               s2 * ome * (s2 * s2 * s2 + 25 * s2 * s2 + 340 * s2 + 840) /
+                                   (1400 * denom * denom * denom)));
+
+  return E * sqrt_ome;
+}
+
+/*
+ * Calculate the eccentric anomaly, its sine and cosine, using a
+ * variant of the algorithm suggested in Raposo-Pulido & Pelaez (2017)
+ * and used in Brandt et al. (2020).  Use the series expansion above
+ * to generate an initial guess in the singular corner and use a
+ * fifth-order polynomial to get the initial guess otherwise.  Use
+ * series and square root calls to evaluate sine and cosine, and
+ * update their values using series.  Accurate to better than 1e-15 in
+ * E-ecc*sin(E)-M at all mean anomalies and at eccentricies up to
+ * 0.999999.
+ */
+
+void calcEA(double M, double ecc, double *E, double *sinE, double *cosE) {
+  double g2s_e = 0.2588190451025207623489 * ecc;
+  double g3s_e = 0.5 * ecc;
+  double g4s_e = 0.7071067811865475244008 * ecc;
+  double g5s_e = 0.8660254037844386467637 * ecc;
+  double g6s_e = 0.9659258262890682867497 * ecc;
+
+  double bounds[13];
+  double EA_tab[9];
+
+  int k;
+  double MA, EA, sE, cE, x, y;
+  double B0, B1, B2, dx, idx;
+  int MAsign = 1;
+  double one_over_ecc = 1e17;
+  if (ecc > 1e-17) one_over_ecc = 1. / ecc;
+
+  MA = MAmod(M);
+  if (MA > pi) {
+    MAsign = -1;
+    MA = twopi - MA;
   }
+  /* Series expansion */
+  if (2 * MA + 1 - ecc < 0.2) {
+    EA = EAstart(MA, ecc);
+  } else {
+    /* Polynomial boundaries given in Raposo-Pulido & Pelaez */
+    bounds[0] = 0;
+    bounds[1] = pi_d_12 - g2s_e;
+    bounds[2] = pi_d_6 - g3s_e;
+    bounds[3] = pi_d_4 - g4s_e;
+    bounds[4] = pi_d_3 - g5s_e;
+    bounds[5] = fivepi_d_12 - g6s_e;
+    bounds[6] = pi_d_2 - ecc;
+    bounds[7] = sevenpi_d_12 - g6s_e;
+    bounds[8] = twopi_d_3 - g5s_e;
+    bounds[9] = threepi_d_4 - g4s_e;
+    bounds[10] = fivepi_d_6 - g3s_e;
+    bounds[11] = elevenpi_d_12 - g2s_e;
+    bounds[12] = pi;
 
-  // adjust fmod result to conform to Python convention of remainder
-  if (mod) {
-    if ((b < 0) != (mod < 0)) {
-      mod += b;
+    /* Which interval? */
+    for (k = 11; k > 0; k--) {
+      if (MA > bounds[k]) break;
     }
+    // if (k < 0) k = 0;
+
+    /* Values at the two endpoints. */
+
+    EA_tab[0] = k * pi_d_12;
+    EA_tab[6] = (k + 1) * pi_d_12;
+
+    /* First two derivatives at the endpoints. Left endpoint first. */
+
+    int sign = (k >= 6) ? 1 : -1;
+
+    x = 1 / (1 - ((6 - k) * pi_d_12 + sign * bounds[abs(6 - k)]));
+    y = -0.5 * (k * pi_d_12 - bounds[k]);
+    EA_tab[1] = x;
+    EA_tab[2] = y * x * x * x;
+
+    x = 1 / (1 - ((5 - k) * pi_d_12 + sign * bounds[abs(5 - k)]));
+    y = -0.5 * ((k + 1) * pi_d_12 - bounds[k + 1]);
+    EA_tab[7] = x;
+    EA_tab[8] = y * x * x * x;
+
+    /* Solve a matrix equation to get the rest of the coefficients. */
+
+    idx = 1 / (bounds[k + 1] - bounds[k]);
+
+    B0 = idx * (-EA_tab[2] - idx * (EA_tab[1] - idx * pi_d_12));
+    B1 = idx * (-2 * EA_tab[2] - idx * (EA_tab[1] - EA_tab[7]));
+    B2 = idx * (EA_tab[8] - EA_tab[2]);
+
+    EA_tab[3] = B2 - 4 * B1 + 10 * B0;
+    EA_tab[4] = (-2 * B2 + 7 * B1 - 15 * B0) * idx;
+    EA_tab[5] = (B2 - 3 * B1 + 6 * B0) * idx * idx;
+
+    /* Now use the coefficients of this polynomial to get the initial guess. */
+
+    dx = MA - bounds[k];
+    EA =
+        EA_tab[0] +
+        dx * (EA_tab[1] + dx * (EA_tab[2] + dx * (EA_tab[3] + dx * (EA_tab[4] + dx * EA_tab[5]))));
+  }
+
+  /* Sine and cosine initial guesses using series */
+
+  if (EA < pi_d_4) {
+    sE = shortsin(EA);
+    cE = sqrt(1 - sE * sE);
+  } else if (EA > threepi_d_4) {
+    sE = shortsin(pi - EA);
+    cE = -sqrt(1 - sE * sE);
   } else {
-    // if mod is zero ensure correct sign
-    mod = copysign(0, b);
+    cE = shortsin(pi_d_2 - EA);
+    sE = sqrt(1 - cE * cE);
   }
 
-  return mod;
-}
+  double num, denom, dEA;
 
-template <typename T>
-inline T get_markley_starter(T M, T ecc, T ome) {
-  // M must be in the range [0, pi)
-  const T FACTOR1 = 3 * M_PI / (M_PI - 6 / M_PI);
-  const T FACTOR2 = 1.6 / (M_PI - 6 / M_PI);
+  /* Halley's method to update E */
 
-  T M2 = M * M;
-  T alpha = FACTOR1 + FACTOR2 * (M_PI - M) / (1 + ecc);
-  T d = 3 * ome + alpha * ecc;
-  T alphad = alpha * d;
-  T r = (3 * alphad * (d - ome) + M2) * M;
-  T q = 2 * alphad * ome - M2;
-  T q2 = q * q;
-  T w = pow(std::abs(r) + sqrt(q2 * q + r * r), 2.0 / 3);
-  return (2 * r * w / (w * w + w * q + q2) + M) / d;
-}
+  num = (MA - EA) * one_over_ecc + sE;
+  denom = one_over_ecc - cE;
+  dEA = num * denom / (denom * denom + 0.5 * sE * num);
 
-template <typename T>
-inline T refine_estimate(T M, T ecc, T ome, T E) {
-  // T sE, cE;
-  // sin_cos_reduc(E, &sE, &cE);
+  /* Use series to update sin and cos */
 
-  T sE = E - sin(E);
-  T cE = 1 - cos(E);
+  if (ecc < 0.78 || MA > 0.4) {
+    *E = MAsign * (EA + dEA);
+    *sinE = MAsign * (sE * (1 - 0.5 * dEA * dEA) + dEA * cE);
+    *cosE = cE * (1 - 0.5 * dEA * dEA) - dEA * sE;
 
-  T f_0 = ecc * sE + E * ome - M;
-  T f_1 = ecc * cE + ome;
-  T f_2 = ecc * (E - sE);
-  T f_3 = 1 - f_1;
-  T d_3 = -f_0 / (f_1 - 0.5 * f_0 * f_2 / f_1);
-  T d_4 = -f_0 / (f_1 + 0.5 * d_3 * f_2 + (d_3 * d_3) * f_3 / 6);
-  T d_42 = d_4 * d_4;
-  T dE = -f_0 / (f_1 + 0.5 * d_4 * f_2 + d_4 * d_4 * f_3 / 6 - d_42 * d_4 * f_2 / 24);
+  } else {
+    /*
+     * Use Householder's third order method to guarantee performance
+     * in the singular corner.
+     */
 
-  return E + dE;
-}
-
-template <typename T>
-inline T solve_kepler(T M, T ecc) {
-  const T two_pi = 2 * M_PI;
-
-  // Wrap M into the range [0, 2*pi]
-  M = npy_mod(M, T(two_pi));
-
-  //
-  bool high = M > M_PI;
-  if (high) M = two_pi - M;
-
-  // Get the starter
-  T ome = 1.0 - ecc;
-  T E = get_markley_starter(M, ecc, ome);
-
-  // Refine this estimate using a high order Newton step
-  E = refine_estimate(M, ecc, ome, E);
-
-  if (high) E = two_pi - E;
-
-  return E;  // + M_ref;
-}
-
-template <typename T>
-inline T solve_kepler(T M, T ecc, T& cosf, T& sinf) {
-  const T tol = T(1.0e-10);
-  if (ecc < tol) {
-    cosf = cos(M);
-    sinf = sin(M);
-    return npy_mod(M, T(2 * M_PI));
+    dEA = num / (denom + dEA * (0.5 * sE + one_sixth * cE * dEA));
+    *E = MAsign * (EA + dEA);
+    *sinE = MAsign * (sE * (1 - 0.5 * dEA * dEA) + dEA * cE * (1 - dEA * dEA * one_sixth));
+    *cosE = cE * (1 - 0.5 * dEA * dEA) - dEA * sE * (1 - dEA * dEA * one_sixth);
   }
 
-  T E = solve_kepler(M, ecc);
-  T sE = sin(E);
-  T cE = cos(E);
+  return;
+}
 
-  // First, compute tan(0.5*E) = sin(E) / (1 + cos(E))
-  T denom = 1 + cE;
-  if (denom > tol) {
-    T tanf2 = sqrt((1 + ecc) / (1 - ecc)) * sE / denom;  // tan(0.5*f)
-    T tanf2_2 = tanf2 * tanf2;
+double solve_kepler(double M, double ecc, double *cosf, double *sinf) {
+  double E;
+  calcEA(M, ecc, &E, sinf, cosf);
+
+  double denom = 1 + *cosf;
+  if (denom > 1.0e-10) {
+    double tanf2 = sqrt((1 + ecc) / (1 - ecc)) * (*sinf) / denom;  // tan(0.5*f)
+    double tanf2_2 = tanf2 * tanf2;
 
     // Then we compute sin(f) and cos(f) using:
     // sin(f) = 2*tan(0.5*f)/(1 + tan(0.5*f)^2), and
     // cos(f) = (1 - tan(0.5*f)^2)/(1 + tan(0.5*f)^2)
     denom = 1 / (1 + tanf2_2);
-    sinf = 2 * tanf2 * denom;
-    cosf = (1 - tanf2_2) * denom;
+    *sinf = 2 * tanf2 * denom;
+    *cosf = (1 - tanf2_2) * denom;
   } else {
     // If cos(E) = -1, E = pi and tan(0.5*E) -> inf and f = E = pi
-    sinf = 0;
-    cosf = -1;
+    *sinf = 0;
+    *cosf = -1;
   }
   return E;
 }
 
-}  // namespace kepler
+}  // namespace calcEA
 }  // namespace exoplanet
 
 #endif

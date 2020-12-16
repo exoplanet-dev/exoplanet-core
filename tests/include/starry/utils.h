@@ -4,8 +4,8 @@
 
 */
 
-#ifndef _EXOPLANET_STARRY_UTILS_H_
-#define _EXOPLANET_STARRY_UTILS_H_
+#ifndef _EXOPLANET_TEST_STARRY_UTILS_H_
+#define _EXOPLANET_TEST_STARRY_UTILS_H_
 
 // Includes
 #include <Eigen/Core>
@@ -66,7 +66,7 @@
 #endif
 
 namespace exoplanet {
-namespace starry {
+namespace test {
 namespace utils {
 
 //! Commonly used stuff throughout starry
@@ -145,7 +145,7 @@ inline bool is_even(int n, int ntimes = 1) {
 }
 
 }  // namespace utils
-}  // namespace starry
+}  // namespace test
 }  // namespace exoplanet
 
 #endif

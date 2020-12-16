@@ -1,6 +1,6 @@
 #define CATCH_CONFIG_MAIN
 #include <exoplanet/limbdark.h>
-#include <exoplanet/starry/limbdark.h>
+#include <starry/limbdark.h>
 
 #include "catch.hpp"
 
@@ -30,7 +30,7 @@ TEST_CASE("check the solution vector", "[limbdark]") {
   double b, r;
   double s[3], dsdb[3], dsdr[3];
   const int lmax = 3;
-  exoplanet::starry::limbdark::GreensLimbDark<double> G(lmax);
+  exoplanet::test::limbdark::GreensLimbDark<double> G(lmax);
 
   for (b = 0.0; b < 2.0; b += 1.123e-3) {
     for (r = 0.0; r < 2.0; r += 1.123e-2) {
