@@ -9,10 +9,6 @@
 namespace exoplanet {
 namespace limbdark {
 
-#ifndef M_PI
-#define M_PI 3.14159265358979323846264338328
-#endif
-
 template <typename Scalar>
 inline void set_zero3(Scalar* x) {
   x[0] = x[1] = x[2] = 0.0;
@@ -156,8 +152,8 @@ inline void quad_solution_vector(const Scalar& b_, const Scalar& r, Scalar* s, S
       } else if (r < 0.5) {
         // Case 5
         Scalar m = 4 * r2;
-        Eofk = ellip::CEL<Scalar>(m, 1, 1, 1 - m);
-        Em1mKdm = ellip::CEL<Scalar>(m, 1, 1, 0);
+        Eofk = internal::ellip::CEL<Scalar>(m, 1, 1, 1 - m);
+        Em1mKdm = internal::ellip::CEL<Scalar>(m, 1, 1, 0);
         Lambda1 = M_PI + 2.0 * third * ((2 * m - 3) * Eofk - m * Em1mKdm);
         if constexpr (ComputeGradient) {
           dsdb[1] = -4.0 * r * third * (Eofk - 2 * Em1mKdm);
@@ -167,8 +163,8 @@ inline void quad_solution_vector(const Scalar& b_, const Scalar& r, Scalar* s, S
         // Case 7
         Scalar m = 4 * r2;
         Scalar minv = 1 / m;
-        Eofk = ellip::CEL<Scalar>(minv, 1, 1, 1 - minv);
-        Em1mKdm = ellip::CEL<Scalar>(minv, 1, 1, 0);
+        Eofk = internal::ellip::CEL<Scalar>(minv, 1, 1, 1 - minv);
+        Em1mKdm = internal::ellip::CEL<Scalar>(minv, 1, 1, 0);
         Lambda1 = M_PI + third * invr * (-m * Eofk + (2 * m - 3) * Em1mKdm);
         if constexpr (ComputeGradient) {
           dsdb[1] = 2 * third * (2 * Eofk - Em1mKdm);
@@ -180,8 +176,8 @@ inline void quad_solution_vector(const Scalar& b_, const Scalar& r, Scalar* s, S
         // Case 2, Case 8
         Scalar sqbrinv = 1 / sqbr;
         Scalar Piofk;
-        ellip::CEL<Scalar>(ksq, kc, (b - r) * (b - r) * kcsq, 0, 1, 1,
-                           3 * kcsq * (b - r) * (b + r), kcsq, 0, Piofk, Eofk, Em1mKdm);
+        internal::ellip::CEL<Scalar>(ksq, kc, (b - r) * (b - r) * kcsq, 0, 1, 1,
+                                     3 * kcsq * (b - r) * (b + r), kcsq, 0, Piofk, Eofk, Em1mKdm);
         Lambda1 = onembmr2 * (Piofk + (-3 + 6 * r2 + 2 * b * r) * Em1mKdm - fourbr * Eofk) *
                   sqbrinv * third;
         if constexpr (ComputeGradient) {
@@ -194,7 +190,8 @@ inline void quad_solution_vector(const Scalar& b_, const Scalar& r, Scalar* s, S
         Scalar mu = 3 * bmrdbpr * onembmr2inv;
         Scalar p = bmrdbpr * bmrdbpr * onembpr2 * onembmr2inv;
         Scalar Piofk;
-        ellip::CEL<Scalar>(invksq, kc, p, 1 + mu, 1, 1, p + mu, kcsq, 0, Piofk, Eofk, Em1mKdm);
+        internal::ellip::CEL<Scalar>(invksq, kc, p, 1 + mu, 1, 1, p + mu, kcsq, 0, Piofk, Eofk,
+                                     Em1mKdm);
         Lambda1 = 2 * sqonembmr2 * (onembpr2 * Piofk - (4 - 7 * r2 - b2) * Eofk) * third;
         if constexpr (ComputeGradient) {
           dsdb[1] = -4 * r * third * sqonembmr2 * (Eofk - 2 * Em1mKdm);

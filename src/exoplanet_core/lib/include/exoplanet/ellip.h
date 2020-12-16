@@ -1,26 +1,10 @@
-/**
-\file ellip.h
-\brief Elliptic integral computation.
-
-Elliptic integrals computed following
-
-    Bulirsch 1965, Numerische Mathematik, 7, 78
-    Bulirsch 1965, Numerische Mathematik, 7, 353
-
-adapted from the implementation by E. Agol in
-<a href="https://github.com/rodluger/limbdark/">limbdark</a>.
-Based in part on Daniel Foreman-Mackey's
-<a href="https://github.com/dfm/AstroFlow/">AstroFlow</a>.
-
-*/
-
-#ifndef _EXOPLANET_LIMBDARK_ELLIP_H_
-#define _EXOPLANET_LIMBDARK_ELLIP_H_
+#ifndef _EXOPLANET_ELLIP_H_
+#define _EXOPLANET_ELLIP_H_
 
 #include <cmath>
 
 namespace exoplanet {
-namespace limbdark {
+namespace internal {
 
 #ifndef __GNUC__
 #define likely(x) (x)
@@ -33,6 +17,13 @@ namespace limbdark {
 #define unlikely(x) __builtin_expect(!!(x), 0)
 #endif
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846264338328
+#endif
+
+// Elliptic integrals computed following
+// Bulirsch 1965, Numerische Mathematik, 7, 78
+// Bulirsch 1965, Numerische Mathematik, 7, 353
 namespace ellip {
 
 #ifndef EXOPLANET_ELLIP_MAX_ITER
@@ -233,7 +224,7 @@ inline void CEL(T k2, T kc, T p, T a1, T a2, T a3, T b1, T b2, T b3, T& Piofk, T
 }
 
 }  // namespace ellip
-}  // namespace limbdark
+}  // namespace internal
 }  // namespace exoplanet
 
 #endif
