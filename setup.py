@@ -113,15 +113,14 @@ class custom_build_ext(build_ext):
 
 include_dirs = [
     "src/exoplanet_core/lib/include",
-    "src/exoplanet_core/lib/vendor/eigen",
     get_numpy_include(),
     get_pybind_include(),
     get_pybind_include(user=True),
 ]
 ext_modules = [
     Extension(
-        "exoplanet_core.driver",
-        ["src/exoplanet_core/driver.cpp"],
+        "exoplanet_core.jax.xla_driver",
+        ["src/exoplanet_core/jax/xla_driver.cpp"],
         include_dirs=include_dirs,
         language="c++",
     )
@@ -151,7 +150,9 @@ if __name__ == "__main__":
         name=NAME,
         use_scm_version={
             "write_to": os.path.join(
-                "src", NAME.replace("-", "_"), "{0}_version.py".format(NAME)
+                "src",
+                NAME.replace("-", "_"),
+                "{0}_version.py".format(NAME.replace("-", "_")),
             ),
             "write_to_template": '__version__ = "{version}"\n',
         },
