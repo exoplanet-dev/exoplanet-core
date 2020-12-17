@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <cmath>
 
-#include "ellip.h"
+#include "exoplanet/ellip.h"
 
 namespace exoplanet {
 namespace limbdark {
@@ -32,8 +32,6 @@ inline void quad_solution_vector(const Scalar& b_, const Scalar& r, Scalar* s, S
                                  Scalar* dsdr) {
   using std::max;
   const Scalar eps = std::numeric_limits<Scalar>::epsilon();
-  const Scalar third = 1.0 / 3;
-
   Scalar b = b_;
 
   // HACK: Fix an instability that exists *really* close to b = r = 0.5
@@ -54,8 +52,8 @@ inline void quad_solution_vector(const Scalar& b_, const Scalar& r, Scalar* s, S
 
   // Special case: no occultation
   if (is_close<Scalar>(r, 0) || (b > r + 1)) {
-    s[0] = M_PI;
-    s[1] = 2.0 * M_PI / 3.0;
+    s[0] = pi;
+    s[1] = twopi_d_3;
     s[2] = 0.0;
     return;
   }
@@ -91,10 +89,10 @@ inline void quad_solution_vector(const Scalar& b_, const Scalar& r, Scalar* s, S
 
   // S[0]
   if (is_close<Scalar>(b, 0) || is_close<Scalar>(r, 0)) {
-    s[0] = M_PI * (1 - r2);
+    s[0] = pi * (1 - r2);
     if_constexpr(ComputeGradient) {
       // dsdb[0] = 0;
-      dsdr[0] = -2 * M_PI * r;
+      dsdr[0] = -twopi * r;
     }
   } else {
     ksq = onembpr2 * invfourbr + 1.0;
@@ -103,10 +101,10 @@ inline void quad_solution_vector(const Scalar& b_, const Scalar& r, Scalar* s, S
     if (ksq > 1) {
       kcsq = onembpr2 * onembmr2inv;
       kc = sqrt(kcsq);
-      s[0] = M_PI * (1 - r2);
+      s[0] = pi * (1 - r2);
       if_constexpr(ComputeGradient) {
         // dsdb[0] = 0;
-        dsdr[0] = -2 * M_PI * r;
+        dsdr[0] = -twopi * r;
       }
     } else {
       kcsq = -onembpr2 * invfourbr;
@@ -114,7 +112,7 @@ inline void quad_solution_vector(const Scalar& b_, const Scalar& r, Scalar* s, S
       kap0 = atan2(kite_area2, (r - 1) * (r + 1) + b2);
       kap1 = atan2(kite_area2, (1 - r) * (1 + r) + b2);
       Scalar Alens = kap1 + r2 * kap0 - kite_area2 * 0.5;
-      s[0] = M_PI - Alens;
+      s[0] = pi - Alens;
       if_constexpr(ComputeGradient) {
         dsdb[0] = kite_area2 * invb;
         dsdr[0] = -2.0 * r * kap0;
@@ -132,21 +130,21 @@ inline void quad_solution_vector(const Scalar& b_, const Scalar& r, Scalar* s, S
     if (is_close<Scalar>(b, 0)) {
       // Case 10
       Scalar sqrt1mr2 = sqrt(1 - r2);
-      Lambda1 = -2 * M_PI * sqrt1mr2 * sqrt1mr2 * sqrt1mr2;
-      Eofk = 0.5 * M_PI;
-      Em1mKdm = 0.25 * M_PI;
+      Lambda1 = -twopi * sqrt1mr2 * sqrt1mr2 * sqrt1mr2;
+      Eofk = pi_d_2;
+      Em1mKdm = pi_d_4;
       if_constexpr(ComputeGradient) {
         // dsdb[1] = 0;
-        dsdr[1] = -2.0 * M_PI * r * sqrt1mr2;
+        dsdr[1] = -twopi * r * sqrt1mr2;
       }
     } else if (is_close<Scalar>(b, r)) {
       if (is_close<Scalar>(r, 0.5)) {
         // Case 6
-        Lambda1 = M_PI - 4 * third;
+        Lambda1 = pi - 4 * one_third;
         Eofk = 1;
         Em1mKdm = 1;
         if_constexpr(ComputeGradient) {
-          dsdb[1] = 2.0 * third;
+          dsdb[1] = 2.0 * one_third;
           dsdr[1] = -2.0;
         }
       } else if (r < 0.5) {
@@ -154,9 +152,9 @@ inline void quad_solution_vector(const Scalar& b_, const Scalar& r, Scalar* s, S
         Scalar m = 4 * r2;
         Eofk = internal::ellip::CEL<Scalar>(m, 1, 1, 1 - m);
         Em1mKdm = internal::ellip::CEL<Scalar>(m, 1, 1, 0);
-        Lambda1 = M_PI + 2.0 * third * ((2 * m - 3) * Eofk - m * Em1mKdm);
+        Lambda1 = pi + 2.0 * one_third * ((2 * m - 3) * Eofk - m * Em1mKdm);
         if_constexpr(ComputeGradient) {
-          dsdb[1] = -4.0 * r * third * (Eofk - 2 * Em1mKdm);
+          dsdb[1] = -4.0 * r * one_third * (Eofk - 2 * Em1mKdm);
           dsdr[1] = -4.0 * r * Eofk;
         }
       } else {
@@ -165,9 +163,9 @@ inline void quad_solution_vector(const Scalar& b_, const Scalar& r, Scalar* s, S
         Scalar minv = 1 / m;
         Eofk = internal::ellip::CEL<Scalar>(minv, 1, 1, 1 - minv);
         Em1mKdm = internal::ellip::CEL<Scalar>(minv, 1, 1, 0);
-        Lambda1 = M_PI + third * invr * (-m * Eofk + (2 * m - 3) * Em1mKdm);
+        Lambda1 = pi + one_third * invr * (-m * Eofk + (2 * m - 3) * Em1mKdm);
         if_constexpr(ComputeGradient) {
-          dsdb[1] = 2 * third * (2 * Eofk - Em1mKdm);
+          dsdb[1] = 2 * one_third * (2 * Eofk - Em1mKdm);
           dsdr[1] = -2 * Em1mKdm;
         }
       }
@@ -179,9 +177,9 @@ inline void quad_solution_vector(const Scalar& b_, const Scalar& r, Scalar* s, S
         internal::ellip::CEL<Scalar>(ksq, kc, (b - r) * (b - r) * kcsq, 0, 1, 1,
                                      3 * kcsq * (b - r) * (b + r), kcsq, 0, Piofk, Eofk, Em1mKdm);
         Lambda1 = onembmr2 * (Piofk + (-3 + 6 * r2 + 2 * b * r) * Em1mKdm - fourbr * Eofk) *
-                  sqbrinv * third;
+                  sqbrinv * one_third;
         if_constexpr(ComputeGradient) {
-          dsdb[1] = 2 * r * onembmr2 * (-Em1mKdm + 2 * Eofk) * sqbrinv * third;
+          dsdb[1] = 2 * r * onembmr2 * (-Em1mKdm + 2 * Eofk) * sqbrinv * one_third;
           dsdr[1] = -2 * r * onembmr2 * Em1mKdm * sqbrinv;
         }
       } else if (ksq > 1) {
@@ -192,33 +190,33 @@ inline void quad_solution_vector(const Scalar& b_, const Scalar& r, Scalar* s, S
         Scalar Piofk;
         internal::ellip::CEL<Scalar>(invksq, kc, p, 1 + mu, 1, 1, p + mu, kcsq, 0, Piofk, Eofk,
                                      Em1mKdm);
-        Lambda1 = 2 * sqonembmr2 * (onembpr2 * Piofk - (4 - 7 * r2 - b2) * Eofk) * third;
+        Lambda1 = 2 * sqonembmr2 * (onembpr2 * Piofk - (4 - 7 * r2 - b2) * Eofk) * one_third;
         if_constexpr(ComputeGradient) {
-          dsdb[1] = -4 * r * third * sqonembmr2 * (Eofk - 2 * Em1mKdm);
+          dsdb[1] = -4 * r * one_third * sqonembmr2 * (Eofk - 2 * Em1mKdm);
           dsdr[1] = -4 * r * sqonembmr2 * Eofk;
         }
       } else {
         // Case 4
         Scalar rootr1mr = sqrt(r * (1 - r));
-        Lambda1 = 2 * acos(1.0 - 2.0 * r) - 4 * third * (3 + 2 * r - 8 * r2) * rootr1mr -
-                  2 * M_PI * int(r > 0.5);
+        Lambda1 = 2 * acos(1.0 - 2.0 * r) - 4 * one_third * (3 + 2 * r - 8 * r2) * rootr1mr -
+                  twopi * int(r > 0.5);
         Eofk = 1;
         Em1mKdm = 1;
         if_constexpr(ComputeGradient) {
           dsdr[1] = -8 * r * rootr1mr;
-          dsdb[1] = -dsdr[1] * third;
+          dsdb[1] = -dsdr[1] * one_third;
         }
       }
     }
   }
-  s[1] = ((1.0 - int(r > b)) * 2 * M_PI - Lambda1) * third;
+  s[1] = ((1.0 - int(r > b)) * twopi - Lambda1) * one_third;
 
   // Special case
   if (is_close<Scalar>(b, 0)) {
-    s[2] = -(1 - r2) * r2 * 2 * M_PI;
+    s[2] = -(1 - r2) * r2 * twopi;
     if_constexpr(ComputeGradient) {
       // dsdb[2] = 0;
-      dsdr[2] = -4 * M_PI * r;  //* (term - r * r);
+      dsdr[2] = -fourpi * r;
     }
     return;
   }
@@ -229,15 +227,15 @@ inline void quad_solution_vector(const Scalar& b_, const Scalar& r, Scalar* s, S
   Scalar four_pi_eta = 0;
   Scalar detadb = 0, detadr = 0;
   if (ksq > 1) {
-    four_pi_eta = 4 * M_PI * (eta2 - 0.5);
+    four_pi_eta = fourpi * (eta2 - 0.5);
     if_constexpr(ComputeGradient) {
       Scalar deta2dr = 2 * r * r2pb2;
       Scalar deta2db = 2 * b * r2;
-      detadr = 4 * M_PI * deta2dr;
-      detadb = 4 * M_PI * deta2db;
+      detadr = fourpi * deta2dr;
+      detadb = fourpi * deta2db;
     }
   } else {
-    four_pi_eta = 2 * (-(M_PI - kap1) + 2 * eta2 * kap0 - 0.25 * kite_area2 * (1.0 + 5 * r2 + b2));
+    four_pi_eta = 2 * (-(pi - kap1) + 2 * eta2 * kap0 - 0.25 * kite_area2 * (1.0 + 5 * r2 + b2));
     if_constexpr(ComputeGradient) {
       detadr = 8 * r * (r2pb2 * kap0 - kite_area2);
       detadb = 2.0 * invb * (4 * b2 * r2 * kap0 - (1 + r2pb2) * kite_area2);

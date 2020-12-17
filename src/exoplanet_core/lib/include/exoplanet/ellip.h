@@ -3,6 +3,8 @@
 
 #include <cmath>
 
+#include "exoplanet/constants.h"
+
 namespace exoplanet {
 namespace internal {
 
@@ -15,10 +17,6 @@ namespace internal {
 
 // Compiler branching optimization: unlikely branch
 #define unlikely(x) __builtin_expect(!!(x), 0)
-#endif
-
-#ifndef M_PI
-#define M_PI 3.14159265358979323846264338328
 #endif
 
 // Elliptic integrals computed following
@@ -100,13 +98,10 @@ T CEL(T ksq, T kc, T p, T a, T b) {
     m += kc;
     if (abs(g - kc) < g * ca) break;
   }
-  return 0.5 * M_PI * (a * m + b) / (m * (m + p));
+  return pi_d_2 * (a * m + b) / (m * (m + p));
 }
 
-/**
-Computes the function `cel(kc, p, a, b)` from Bulirsch (1969)
-
-*/
+// Computes the function `cel(kc, p, a, b)` from Bulirsch (1969)
 template <typename T>
 T CEL(T ksq, T p, T a, T b) {
   T kc;
@@ -118,13 +113,10 @@ T CEL(T ksq, T p, T a, T b) {
   return CEL(ksq, kc, p, a, b);
 }
 
-/**
-Computes the function `cel(kc, p, a, b)` from Bulirsch (1969).
-Vectorized version to improve speed when computing multiple
-elliptic integrals with the same value of `kc`.
-This assumes first value of a and b uses p; the rest have p = 1.
-
-*/
+// Computes the function `cel(kc, p, a, b)` from Bulirsch (1969).
+// Vectorized version to improve speed when computing multiple
+// elliptic integrals with the same value of `kc`.
+// This assumes first value of a and b uses p; the rest have p = 1.
 template <typename T>
 inline void CEL(T k2, T kc, T p, T a1, T a2, T a3, T b1, T b2, T b3, T& Piofk, T& Eofk,
                 T& Em1mKdm) {
@@ -139,7 +131,7 @@ inline void CEL(T k2, T kc, T p, T a1, T a2, T a3, T b1, T b2, T b3, T& Piofk, T
     k2 = eps;
 
   // Tolerance
-  T ca = sqrt(eps * k2);
+  const T ca = sqrt(eps * k2);
 
   // Temporary vars
   T p1, pinv, pinv1, q, g, g1, ginv, f, f1, f2, f3;
@@ -213,9 +205,11 @@ inline void CEL(T k2, T kc, T p, T a1, T a2, T a3, T b1, T b2, T b3, T& Piofk, T
     m += kc;
     ++iter;
   }
-  Piofk = 0.5 * M_PI * (a1 * m + b1) / (m * (m + p));
-  Eofk = 0.5 * M_PI * (a2 * m + b2) / (m * (m + p1));
-  Em1mKdm = 0.5 * M_PI * (a3 * m + b3) / (m * (m + p1));
+
+  pinv = pi_d_2 / (m * (m + p1));
+  Piofk = pi_d_2 * (a1 * m + b1) / (m * (m + p));
+  Eofk = pinv * (a2 * m + b2);
+  Em1mKdm = pinv * (a3 * m + b3);
 }
 
 }  // namespace ellip

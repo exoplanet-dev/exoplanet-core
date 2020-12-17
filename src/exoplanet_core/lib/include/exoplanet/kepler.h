@@ -1,55 +1,28 @@
 #ifndef _EXOPLANET_KEPLER_H_
 #define _EXOPLANET_KEPLER_H_
 
-/*
- * C code to compute the eccentric anomaly, its sine and cosine, from
- * an input mean anomaly and eccentricity.  Timothy D. Brandt wrote
- * the code; the algorithm is based on Raposo-Pulido & Pelaez, 2017,
- * MNRAS, 467, 1702.  Computational cost is equivalent to around 3
- * trig calls (sine, cosine) in tests as of August 2020.  This can be
- * further reduced if using many mean anomalies at fixed eccentricity;
- * the code would need some modest refactoring in that case.  Accuracy
- * should be within a factor of a few of machine epsilon in E-ecc*sinE
- * and in cosE up to at least ecc=0.999999.
- */
+// C code to compute the eccentric anomaly, its sine and cosine, from
+// an input mean anomaly and eccentricity.  Timothy D. Brandt wrote
+// the code; the algorithm is based on Raposo-Pulido & Pelaez, 2017,
+// MNRAS, 467, 1702.  Computational cost is equivalent to around 3
+// trig calls (sine, cosine) in tests as of August 2020.  This can be
+// further reduced if using many mean anomalies at fixed eccentricity;
+// the code would need some modest refactoring in that case.  Accuracy
+// should be within a factor of a few of machine epsilon in E-ecc*sinE
+// and in cosE up to at least ecc=0.999999.
 
 #include <cmath>
 #include <cstdlib>
 
+#include "exoplanet/constants.h"
+
 namespace exoplanet {
-namespace calcEA {
+namespace kepler {
 
-const double one_sixth = 1. / 6;
-
-const double if3 = 1. / 6;
-const double if5 = 1. / (6. * 20);
-const double if7 = 1. / (6. * 20 * 42);
-const double if9 = 1. / (6. * 20 * 42 * 72);
-const double if11 = 1. / (6. * 20 * 42 * 72 * 110);
-const double if13 = 1. / (6. * 20 * 42 * 72 * 110 * 156);
-const double if15 = 1. / (6. * 20 * 42 * 72 * 110 * 156 * 210);
-
-const double pi = 3.14159265358979323846264338327950288;
-const double pi_d_12 = 3.14159265358979323846264338327950288 / 12;
-const double pi_d_6 = 3.14159265358979323846264338327950288 / 6;
-const double pi_d_4 = 3.14159265358979323846264338327950288 / 4;
-const double pi_d_3 = 3.14159265358979323846264338327950288 / 3;
-const double fivepi_d_12 = 3.14159265358979323846264338327950288 * 5. / 12;
-const double pi_d_2 = 3.14159265358979323846264338327950288 / 2;
-const double sevenpi_d_12 = 3.14159265358979323846264338327950288 * 7. / 12;
-const double twopi_d_3 = 3.14159265358979323846264338327950288 * 2. / 3;
-const double threepi_d_4 = 3.14159265358979323846264338327950288 * 3. / 4;
-const double fivepi_d_6 = 3.14159265358979323846264338327950288 * 5. / 6;
-const double elevenpi_d_12 = 3.14159265358979323846264338327950288 * 11. / 12;
-const double twopi = 3.14159265358979323846264338327950288 * 2;
-
-/*
- * Evaluate sine with a series expansion.  We can guarantee that the
- * argument will be <=pi/4, and this reaches double precision (within
- * a few machine epsilon) at a signficantly lower cost than the
- * function call to sine that obeys the IEEE standard.
- */
-
+// Evaluate sine with a series expansion.  We can guarantee that the
+// argument will be <=pi/4, and this reaches double precision (within
+// a few machine epsilon) at a signficantly lower cost than the
+// function call to sine that obeys the IEEE standard.
 inline double shortsin(double x) {
   double x2 = x * x;
   return x *
@@ -57,10 +30,8 @@ inline double shortsin(double x) {
                     x2 * (if5 - x2 * (if7 - x2 * (if9 - x2 * (if11 - x2 * (if13 - x2 * if15)))))));
 }
 
-/*
- * Modulo 2pi: works best when you use an increment so that the
- * argument isn't too much larger than 2pi.
- */
+// Modulo 2pi: works best when you use an increment so that the
+// argument isn't too much larger than 2pi.
 double MAmod(double M) {
   if (M < twopi && M >= 0) return M;
 
@@ -79,12 +50,9 @@ double MAmod(double M) {
   }
 }
 
-/*
- * Use the second-order series expanion in Raposo-Pulido & Pelaez
- * (2017) in the singular corner (eccentricity close to 1, mean
- * anomaly close to zero).
- */
-
+// Use the second-order series expanion in Raposo-Pulido & Pelaez
+// (2017) in the singular corner (eccentricity close to 1, mean
+// anomaly close to zero).
 double EAstart(double M, double ecc) {
   double ome = 1. - ecc;
   double sqrt_ome = sqrt(ome);
@@ -104,18 +72,15 @@ double EAstart(double M, double ecc) {
   return E * sqrt_ome;
 }
 
-/*
- * Calculate the eccentric anomaly, its sine and cosine, using a
- * variant of the algorithm suggested in Raposo-Pulido & Pelaez (2017)
- * and used in Brandt et al. (2020).  Use the series expansion above
- * to generate an initial guess in the singular corner and use a
- * fifth-order polynomial to get the initial guess otherwise.  Use
- * series and square root calls to evaluate sine and cosine, and
- * update their values using series.  Accurate to better than 1e-15 in
- * E-ecc*sin(E)-M at all mean anomalies and at eccentricies up to
- * 0.999999.
- */
-
+// Calculate the eccentric anomaly, its sine and cosine, using a
+// variant of the algorithm suggested in Raposo-Pulido & Pelaez (2017)
+// and used in Brandt et al. (2020).  Use the series expansion above
+// to generate an initial guess in the singular corner and use a
+// fifth-order polynomial to get the initial guess otherwise.  Use
+// series and square root calls to evaluate sine and cosine, and
+// update their values using series.  Accurate to better than 1e-15 in
+// E-ecc*sin(E)-M at all mean anomalies and at eccentricies up to
+// 0.999999.
 void calcEA(double M, double ecc, double *E, double *sinE, double *cosE) {
   double g2s_e = 0.2588190451025207623489 * ecc;
   double g3s_e = 0.5 * ecc;
@@ -138,11 +103,11 @@ void calcEA(double M, double ecc, double *E, double *sinE, double *cosE) {
     MAsign = -1;
     MA = twopi - MA;
   }
-  /* Series expansion */
+  // Series expansion
   if (2 * MA + 1 - ecc < 0.2) {
     EA = EAstart(MA, ecc);
   } else {
-    /* Polynomial boundaries given in Raposo-Pulido & Pelaez */
+    // Polynomial boundaries given in Raposo-Pulido & Pelaez
     bounds[0] = 0;
     bounds[1] = pi_d_12 - g2s_e;
     bounds[2] = pi_d_6 - g3s_e;
@@ -163,13 +128,11 @@ void calcEA(double M, double ecc, double *E, double *sinE, double *cosE) {
     }
     // if (k < 0) k = 0;
 
-    /* Values at the two endpoints. */
-
+    // Values at the two endpoints.
     EA_tab[0] = k * pi_d_12;
     EA_tab[6] = (k + 1) * pi_d_12;
 
-    /* First two derivatives at the endpoints. Left endpoint first. */
-
+    // First two derivatives at the endpoints. Left endpoint first.
     int sign = (k >= 6) ? 1 : -1;
 
     x = 1 / (1 - ((6 - k) * pi_d_12 + sign * bounds[abs(6 - k)]));
@@ -182,8 +145,7 @@ void calcEA(double M, double ecc, double *E, double *sinE, double *cosE) {
     EA_tab[7] = x;
     EA_tab[8] = y * x * x * x;
 
-    /* Solve a matrix equation to get the rest of the coefficients. */
-
+    // Solve a matrix equation to get the rest of the coefficients.
     idx = 1 / (bounds[k + 1] - bounds[k]);
 
     B0 = idx * (-EA_tab[2] - idx * (EA_tab[1] - idx * pi_d_12));
@@ -194,16 +156,14 @@ void calcEA(double M, double ecc, double *E, double *sinE, double *cosE) {
     EA_tab[4] = (-2 * B2 + 7 * B1 - 15 * B0) * idx;
     EA_tab[5] = (B2 - 3 * B1 + 6 * B0) * idx * idx;
 
-    /* Now use the coefficients of this polynomial to get the initial guess. */
-
+    // Now use the coefficients of this polynomial to get the initial guess.
     dx = MA - bounds[k];
     EA =
         EA_tab[0] +
         dx * (EA_tab[1] + dx * (EA_tab[2] + dx * (EA_tab[3] + dx * (EA_tab[4] + dx * EA_tab[5]))));
   }
 
-  /* Sine and cosine initial guesses using series */
-
+  // Sine and cosine initial guesses using series
   if (EA < pi_d_4) {
     sE = shortsin(EA);
     cE = sqrt(1 - sE * sE);
@@ -217,25 +177,20 @@ void calcEA(double M, double ecc, double *E, double *sinE, double *cosE) {
 
   double num, denom, dEA;
 
-  /* Halley's method to update E */
-
+  // Halley's method to update E
   num = (MA - EA) * one_over_ecc + sE;
   denom = one_over_ecc - cE;
   dEA = num * denom / (denom * denom + 0.5 * sE * num);
 
-  /* Use series to update sin and cos */
-
+  // Use series to update sin and cos
   if (ecc < 0.78 || MA > 0.4) {
     *E = MAsign * (EA + dEA);
     *sinE = MAsign * (sE * (1 - 0.5 * dEA * dEA) + dEA * cE);
     *cosE = cE * (1 - 0.5 * dEA * dEA) - dEA * sE;
 
   } else {
-    /*
-     * Use Householder's third order method to guarantee performance
-     * in the singular corner.
-     */
-
+    // Use Householder's third order method to guarantee performance
+    // in the singular corners
     dEA = num / (denom + dEA * (0.5 * sE + one_sixth * cE * dEA));
     *E = MAsign * (EA + dEA);
     *sinE = MAsign * (sE * (1 - 0.5 * dEA * dEA) + dEA * cE * (1 - dEA * dEA * one_sixth));
@@ -268,7 +223,7 @@ double solve_kepler(double M, double ecc, double *cosf, double *sinf) {
   return E;
 }
 
-}  // namespace calcEA
+}  // namespace kepler
 }  // namespace exoplanet
 
 #endif

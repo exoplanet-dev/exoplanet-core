@@ -21,7 +21,7 @@ xla_client.register_cpu_custom_call_target(
 
 
 def quad_solution_vector(b, r):
-    return quad_solution_vector_prim.bind(b, r)[0]
+    return quad_solution_vector_prim.bind(jnp.abs(b), jnp.abs(r))[0]
 
 
 def quad_solution_vector_abstract_eval(b, r):
