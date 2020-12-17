@@ -6,12 +6,10 @@
 #include <tuple>
 #include <vector>
 
+#include "exoplanet/constants.h"
+
 namespace exoplanet {
 namespace contact_points {
-
-#ifndef M_PI
-#define M_PI 3.14159265358979323846264338328
-#endif
 
 template <typename T>
 int sgn(T val) {
@@ -85,7 +83,7 @@ class ContactPointSolver {
   std::tuple<bool, Scalar> convert_to_mean_anomaly(Scalar x) const {
     auto const coords = get_coords(x);
     auto const z = std::get<2>(coords);
-    auto const f = atan2(-x * sinw + z * cosw / sini, x * cosw + z * sinw / sini) - M_PI;
+    auto const f = atan2(-x * sinw + z * cosw / sini, x * cosw + z * sinw / sini) - pi;
     auto const E = 2 * atan(Efactor * tan(0.5 * f));
     auto const M = E - e * sin(E);
     return std::make_tuple(std::get<0>(coords), M);
