@@ -48,7 +48,7 @@ class Kepler(theano.Op):
         M, ecc = inputs
         cosf = resize_or_set(outputs, 0, M.shape)
         sinf = resize_or_set(outputs, 1, M.shape)
-        driver.kepler(M, ecc, cosf, sinf)
+        driver.solve_kepler(M, ecc, cosf, sinf)
 
     def grad(self, inputs, gradients):
         M, e = inputs
