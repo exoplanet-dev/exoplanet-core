@@ -35,6 +35,11 @@ const double elevenpi_d_12 = M_PI * 11. / 12;
 const double twopi = M_PI * 2;
 const double fourpi = M_PI * 4;
 
+template <typename T>
+int sgn(T val) {
+  return (T(0) < val) - (val < T(0));
+}
+
 }  // namespace exoplanet
 
 #endif

@@ -2,7 +2,6 @@
 
 __all__ = ["kepler", "quad_solution_vector"]
 
-
 from functools import partial
 
 import numpy as np
@@ -68,7 +67,7 @@ def kepler_translation_rule(c, M, ecc):
 def kepler_jvp(args, tangents):
     M, e = args
     dM, de = tangents
-    sinf, cosf = kepler(M, e)
+    cosf, sinf = kepler(M, e)
 
     # Pre-compute some things
     ecosf = e * cosf
@@ -81,7 +80,7 @@ def kepler_jvp(args, tangents):
     if type(de) is not ad.Zero:
         df += de * (2 + ecosf) * sinf / ome2
 
-    return (sinf, cosf), (cosf * df, -sinf * df)
+    return (cosf, sinf), (-sinf * df, cosf * df)
 
 
 def kepler_batch(args, axes):
@@ -108,7 +107,7 @@ xla_client.register_cpu_custom_call_target(
 
 
 def quad_solution_vector(b, r):
-    return quad_solution_vector_prim.bind(jnp.abs(b), jnp.abs(r))[0]
+    return quad_solution_vector_prim.bind(b, r)[0]
 
 
 def quad_solution_vector_abstract_eval(b, r):

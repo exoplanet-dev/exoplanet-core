@@ -119,11 +119,17 @@ include_dirs = [
 ]
 ext_modules = [
     Extension(
+        "exoplanet_core.driver",
+        ["src/exoplanet_core/driver.cpp"],
+        include_dirs=include_dirs,
+        language="c++",
+    ),
+    Extension(
         "exoplanet_core.jax.xla_driver",
         ["src/exoplanet_core/jax/xla_driver.cpp"],
         include_dirs=include_dirs,
         language="c++",
-    )
+    ),
 ]
 
 # END PYBIND11

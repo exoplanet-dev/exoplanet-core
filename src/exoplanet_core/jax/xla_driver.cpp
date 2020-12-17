@@ -9,10 +9,8 @@ void solve_kepler(void *out_tuple, const void **in) {
   const int N = *reinterpret_cast<const int *>(in[0]);
   const double *M = reinterpret_cast<const double *>(in[1]);
   const double *ecc = reinterpret_cast<const double *>(in[2]);
-
-  // Note that the order here is different from in the library... mea culpa
-  double *sinf = reinterpret_cast<double *>(out[0]);
-  double *cosf = reinterpret_cast<double *>(out[1]);
+  double *cosf = reinterpret_cast<double *>(out[0]);
+  double *sinf = reinterpret_cast<double *>(out[1]);
 
   for (int n = 0; n < N; ++n) {
     exoplanet::kepler::solve_kepler(M[n], ecc[n], cosf + n, sinf + n);
@@ -31,8 +29,12 @@ void quad_solution_vector(void *out_tuple, const void **in) {
 
   for (int n = 0; n < N; ++n) {
     int offset = 3 * n;
-    exoplanet::limbdark::quad_solution_vector<true>(b[n], r[n], s + offset, dsdb + offset,
-                                                    dsdr + offset);
+    int sgn = exoplanet::sgn(b[n]);
+    exoplanet::limbdark::quad_solution_vector<true>(std::abs(b[n]), r[n], s + offset,
+                                                    dsdb + offset, dsdr + offset);
+    dsdb[offset] *= sgn;
+    dsdb[offset + 1] *= sgn;
+    dsdb[offset + 2] *= sgn;
   }
 }
 
