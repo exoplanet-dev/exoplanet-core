@@ -32,7 +32,13 @@ jobs:
         run: |
           python -m pip install -U pip
           python -m pip install -e .[test]
+
+          python -m pip install "pymc3<3.10" theano==1.0.5
           python -m pip install starry
+
+      - name: Starry
+        shell: bash -l {0}
+        run: python -c "import starry"
 
       - name: Run tests
         shell: bash -l {0}
