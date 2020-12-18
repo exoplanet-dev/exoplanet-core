@@ -28,7 +28,7 @@ def test_compare_starry():
     expected = m.flux(xo=b, ro=r[0]).eval() - 1
 
     computed = core.quad_limbdark_light_curve(u1, u2, b, r)
-    np.testing.assert_allclose(computed, expected)
+    np.testing.assert_allclose(computed, expected, atol=1e-12)
 
 
 @pytest.mark.skipif(batman is None, reason="batman is not installed")
