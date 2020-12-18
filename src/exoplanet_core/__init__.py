@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-__all__ = ["__version__", "driver"]
+__all__ = ["__version__", "quad_limbdark_light_curve"]
 
-from . import driver
+from .core import quad_limbdark_light_curve
 from .exoplanet_core_version import __version__
 
 __uri__ = "https://docs.exoplanet.codes"

@@ -1,28 +1,20 @@
 # -*- coding: utf-8 -*-
 
-__all__ = ["kepler", "quad_limbdark_light_curve"]
+__all__ = ["quad_limbdark_light_curve"]
 
 
 import numpy as np
 
-from . import driver
-
-
-def kepler(mean_anomaly, eccentricity):
-    mean_anomaly = np.ascontiguousarray(mean_anomaly, dtype=np.float64)
-    eccentricity = np.ascontiguousarray(eccentricity, dtype=np.float64)
-    cosf = np.empty_like(mean_anomaly)
-    sinf = np.empty_like(mean_anomaly)
-    return driver.solve_kepler(mean_anomaly, eccentricity, cosf, sinf)
+from .numpy import ops
 
 
 def quad_limbdark_light_curve(u1, u2, b, r):
-    c = np.array(
-        (1 - u1 - 1.5 * u2, u1 + 2 * u2, -0.25 * u2), dtype=np.float64
+    c = np.asarray(
+        [1 - u1 - 1.5 * u2, u1 + 2 * u2, -0.25 * u2],
+        dtype=np.float64,
+        order="C",
     )
-    b = np.ascontiguousarray(b, dtype=np.float64)
-    r = np.ascontiguousarray(r, dtype=np.float64)
-    s = np.empty(r.shape + (3,), dtype=np.float64)
-    driver.quad_solution_vector(b, r, s)
-
-    return np.dot(s, c)
+    c /= np.pi * (c[0] + c[1] / 1.5)
+    b = np.asarray(b, dtype=np.float64, order="C")
+    r = np.asarray(r, dtype=np.float64, order="C")
+    return np.dot(ops.quad_solution_vector(b, r), c) - 1
