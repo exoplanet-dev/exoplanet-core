@@ -28,7 +28,7 @@ CLASSIFIERS = [
 SETUP_REQUIRES = ["setuptools>=40.6.0", "setuptools_scm"]
 INSTALL_REQUIRES = ["pybind11>=2.4", "numpy>=1.13.0"]
 EXTRA_REQUIRE = {
-    "test": ["pytest", "pytest-cov>=2.6.1", "batman-package"],
+    "test": ["pytest", "pytest-cov>=2.6.1"],
 }
 
 # END PROJECT SPECIFIC
