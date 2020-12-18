@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-import pytest
 
 from exoplanet_core.numpy import ops
 
