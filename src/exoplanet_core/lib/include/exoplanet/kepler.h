@@ -62,12 +62,12 @@ double EAstart(double M, double ecc) {
   double S = cbrt(Lam + 3 * chi);
   double sigma = 6 * chi / (2 + S * S + 4. / (S * S));
   double s2 = sigma * sigma;
+  double s4 = s2 * s2;
 
-  double denom = s2 + 2;
-  double E = sigma * (1 + s2 * ome *
-                              ((s2 + 20) / (60. * denom) +
-                               s2 * ome * (s2 * s2 * s2 + 25 * s2 * s2 + 340 * s2 + 840) /
-                                   (1400 * denom * denom * denom)));
+  double denom = 1.0 / (s2 + 2);
+  double E = sigma * (1 + s2 * ome * denom *
+                              ((s2 + 20) / 60. + s2 * ome * denom * denom *
+                                                     (s2 * s4 + 25 * s4 + 340 * s2 + 840) / 1400));
 
   return E * sqrt_ome;
 }

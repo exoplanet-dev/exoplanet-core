@@ -92,8 +92,15 @@ class QuadSolutionVector(theano.Op):
         in_args = [as_tensor_variable(b), as_tensor_variable(r)]
         if any(i.dtype != "float64" for i in in_args):
             raise ValueError("float64 precision is required")
-        out_args = [in_args[0].type(), in_args[0].type(), in_args[0].type()]
-        return theano.Apply(self, in_args, out_args)
+        x = in_args[0]
+        o = [
+            tt.tensor(
+                broadcastable=tuple(x.broadcastable) + (False,),
+                dtype=x.dtype,
+            )
+            for _ in range(3)
+        ]
+        return theano.Apply(self, in_args, o)
 
     def infer_shape(self, node, shapes):
         shape = tuple(shapes[0]) + (3,)
