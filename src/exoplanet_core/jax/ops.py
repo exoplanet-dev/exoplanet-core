@@ -26,6 +26,30 @@ xla_client.register_cpu_custom_call_target(
 
 
 def kepler(M, ecc):
+    r"""Solve Kepler's equation
+
+    This op numerically evaluates the solution to Kepler's equation for given
+    mean anomaly ``M`` and eccentricity ``e``:
+
+    .. math::
+
+        M = E - e sin(E)
+
+    For computational efficiency this op actually returns ``cos(f)`` and
+    ``sin(f)``, where ``f`` is the true anomaly, defined as
+
+    .. math::
+
+        f = 2\,\arctan\left(\sqrt{\frac{1 + e}{1 - e}}\,\tan\frac{E}{2}\right)
+
+    Args:
+        mean_anomaly: The mean anomaly
+        eccentricity: Eccentricity, like it says on the box
+
+    Returns:
+        (cos(f), sin(f)): The cosine and sine of the true anomaly ``f``.
+
+    """
     return kepler_prim.bind(M, ecc)
 
 
@@ -107,6 +131,23 @@ xla_client.register_cpu_custom_call_target(
 
 
 def quad_solution_vector(b, r):
+    r"""Compute the "solution vector" for a quadratic limb-darkening model
+
+    This will return a tensor with an extra dimension of size 3 on the right
+    hand side which represents the solution vector for each pair of impact
+    parameter ``b`` and radius ratio ``r`` values. See `Agol+ (2020)
+    <https://arxiv.org/abs/1908.03222>`_ for more details.
+
+    Args:
+        b: The impact parameter
+        r: The radius ratio
+
+    Returns:
+        (s, dsdb, dsdr): The solution vector and its first derivatives. Each
+            will have the shape ``[..., 3]``, where ``...`` indicates the shape
+            of ``b`` or ``r``.
+
+    """
     return quad_solution_vector_prim.bind(b, r)[0]
 
 

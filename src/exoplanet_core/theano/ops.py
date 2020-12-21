@@ -32,6 +32,30 @@ def resize_or_set(outputs, n, shape, dtype=np.float64):
 #   |_\_\___| .__/_\___|_|
 #           |_|
 class Kepler(theano.Op):
+    r"""Solve Kepler's equation
+
+    This op numerically evaluates the solution to Kepler's equation for given
+    mean anomaly ``M`` and eccentricity ``e``:
+
+    .. math::
+
+        M = E - e sin(E)
+
+    For computational efficiency this op actually returns ``cos(f)`` and
+    ``sin(f)``, where ``f`` is the true anomaly, defined as
+
+    .. math::
+
+        f = 2\,\arctan\left(\sqrt{\frac{1 + e}{1 - e}}\,\tan\frac{E}{2}\right)
+
+    Args:
+        mean_anomaly: The mean anomaly
+        eccentricity: Eccentricity, like it says on the box
+
+    Returns:
+        (cos(f), sin(f)): The cosine and sine of the true anomaly ``f``.
+
+    """
     __props__ = ()
 
     def make_node(self, M, ecc):
@@ -86,6 +110,26 @@ kepler = Kepler()
 #   /__/\__\__,_|_| |_|  \_, |
 #                        |__/
 class QuadSolutionVector(theano.Op):
+    r"""Compute the "solution vector" for a quadratic limb-darkening model
+
+    Note that you probably don't ever want to directly instantiate this op.
+    Use ``exoplanet_core.theano.ops.quad_solution_vector`` instead.
+
+    This will return a tensor with an extra dimension of size 3 on the right
+    hand side which represents the solution vector for each pair of impact
+    parameter ``b`` and radius ratio ``r`` values. See `Agol+ (2020)
+    <https://arxiv.org/abs/1908.03222>`_ for more details.
+
+    Args:
+        b: The impact parameter
+        r: The radius ratio
+
+    Returns:
+        (s, dsdb, dsdr): The solution vector and its first derivatives. Each
+            will have the shape ``[..., 3]``, where ``...`` indicates the shape
+            of ``b`` or ``r``.
+
+    """
     __props__ = ()
 
     def make_node(self, b, r):
