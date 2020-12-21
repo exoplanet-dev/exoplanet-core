@@ -14,7 +14,7 @@ ops = pytest.importorskip("exoplanet_core.theano.ops")
 
 try:
     from theano.link.jax import JAXLinker
-except ImportError:
+except (ImportError, ModuleNotFoundError):
     JAXLinker = pytest.importorskip("theano.sandbox.jax_linker.JAXLinker")
 
 
