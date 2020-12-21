@@ -43,7 +43,7 @@ jobs:
           python -m pip install -e .[test]
 
       - name: Install starry and batman for comparisons on Linux
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.extras != 'theano-pymc' }}
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.extras != 'theano-pymc jax' }}
         shell: bash -l {0}
         run: |
           python -m pip install "pymc3<3.10" theano==1.0.5
