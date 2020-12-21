@@ -43,4 +43,5 @@ def test_kepler_grad(kepler_data):
 
     M, e, f = kepler_data
     m = (0.01 < e) & (e < 0.9)
-    check_grads(ops.kepler, [M[m], e[m]], 2, eps=1e-6)
+    check_grads(lambda *args: ops.kepler(*args)[0], [M[m], e[m]], 2, eps=1e-6)
+    check_grads(lambda *args: ops.kepler(*args)[1], [M[m], e[m]], 2, eps=1e-6)

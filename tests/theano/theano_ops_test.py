@@ -38,3 +38,9 @@ def test_kepler_grad(kepler_data):
         rng=np.random,
         eps=1e-8,
     )
+    theano.tensor.verify_grad(
+        lambda *x: ops.kepler(*x)[1],
+        [M[:, ind], e[:, ind]],
+        rng=np.random,
+        eps=1e-8,
+    )
