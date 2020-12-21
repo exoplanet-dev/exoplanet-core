@@ -8,13 +8,14 @@ import pytest
 from exoplanet_core.testing import get_mean_and_true_anomaly
 
 jax = pytest.importorskip("jax")
+jnp = pytest.importorskip("jax.numpy")
 theano = pytest.importorskip("theano")
 tt = pytest.importorskip("theano.tensor")
 ops = pytest.importorskip("exoplanet_core.theano.ops")
 
 try:
     from theano.link.jax import JAXLinker
-except (ImportError, ModuleNotFoundError):
+except ImportError:
     JAXLinker = pytest.importorskip("theano.sandbox.jax_linker.JAXLinker")
 
 

@@ -21,7 +21,7 @@ jobs:
             extras: "theano"
           - python-version: "3.8"
             os: "ubuntu-latest"
-            extras: "theano-pymc"
+            extras: "theano-pymc jax"
 
     steps:
       - uses: actions/checkout@v2
