@@ -29,7 +29,14 @@ SETUP_REQUIRES = ["setuptools>=40.6.0", "setuptools_scm"]
 INSTALL_REQUIRES = ["pybind11>=2.4", "numpy>=1.13.0"]
 EXTRA_REQUIRE = {
     "test": ["pytest", "pytest-cov>=2.6.1"],
-    "benchmark": ["pytest", "pytest-benchmark", "radvel", "kepler.py"],
+    "benchmark": [
+        "pytest",
+        "pytest-benchmark",
+        "radvel",
+        "kepler.py",
+        "batman-package",
+        "exoplanet==0.4.3",
+    ],
 }
 
 # END PROJECT SPECIFIC
