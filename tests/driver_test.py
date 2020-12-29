@@ -3,16 +3,11 @@
 import numpy as np
 
 from exoplanet_core import driver
-
-
-def get_M_and_f(e, E):
-    M = E - e * np.sin(E)
-    f = 2 * np.arctan(np.sqrt((1 + e) / (1 - e)) * np.tan(0.5 * E))
-    return M, f
+from exoplanet_core.testing import get_mean_and_true_anomaly
 
 
 def check_kepler(e, E):
-    M, f = get_M_and_f(e, E)
+    M, f = get_mean_and_true_anomaly(e, E)
     cosf0, sinf0 = np.nan + np.zeros_like(M), np.nan + np.zeros_like(M)
     cosf, sinf = driver.solve_kepler(M, e, cosf0, sinf0)
 
