@@ -43,16 +43,19 @@ def kepler_args(request):
     return np.linspace(-100, 100, N), request.param + np.zeros(N)
 
 
+@pytest.mark.benchmark(group="kepler")
 def test_numpy_kepler_benchmark(benchmark, kepler_args):
     benchmark(ops.kepler, *kepler_args)
 
 
 @pytest.mark.skipif(kepler is None, reason="kepler.py is not installed")
+@pytest.mark.benchmark(group="kepler")
 def test_kepler_dot_py_kepler_benchmark(benchmark, kepler_args):
     benchmark(kepler.kepler, *kepler_args)
 
 
 @pytest.mark.skipif(radvel is None, reason="radvel is not installed")
+@pytest.mark.benchmark(group="kepler")
 def test_radvel_kepler_benchmark(benchmark, kepler_args):
     M, ecc = kepler_args
     ecc = ecc[0]
@@ -80,11 +83,13 @@ def limbdark_args(request):
     return u1, u2, b, r
 
 
+@pytest.mark.benchmark(group="limbdark")
 def test_quad_limbdark_benchmark(benchmark, limbdark_args):
     benchmark(core.quad_limbdark_light_curve, *limbdark_args)
 
 
 @pytest.mark.skipif(exoplanet is None, reason="old exoplanet is not installed")
+@pytest.mark.benchmark(group="limbdark")
 def test_quad_limbdark_exoplanet_benchmark(benchmark, limbdark_args):
     u1, u2, b, r = limbdark_args
     ld = exoplanet.theano_ops.driver.SimpleLimbDark()
@@ -96,6 +101,7 @@ def test_quad_limbdark_exoplanet_benchmark(benchmark, limbdark_args):
 
 
 @pytest.mark.skipif(starry is None, reason="starry is not installed")
+@pytest.mark.benchmark(group="limbdark", warmup=True)
 def test_quad_limbdark_starry_benchmark(benchmark, limbdark_args):
     import theano
     import theano.tensor as tt
@@ -115,9 +121,10 @@ def test_quad_limbdark_starry_benchmark(benchmark, limbdark_args):
 
 
 @pytest.mark.skipif(batman is None, reason="batman is not installed")
+@pytest.mark.benchmark(group="limbdark")
 def test_quad_limbdark_batman_benchmark(benchmark, limbdark_args):
     u1, u2, b, r = limbdark_args
 
     @benchmark
-    def _starry():
+    def _batman():
         return batman._quadratic_ld._quadratic_ld(b, r[0], u1, u2, 1) - 1
