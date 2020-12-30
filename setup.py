@@ -121,6 +121,7 @@ class custom_build_ext(build_ext):
 
 include_dirs = [
     "src/exoplanet_core/lib/include",
+    "src/exoplanet_core/lib/vendor/eigen",
     get_numpy_include(),
     get_pybind_include(),
     get_pybind_include(user=True),
