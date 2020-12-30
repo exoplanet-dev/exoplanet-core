@@ -14,7 +14,7 @@
 #include <cmath>
 #include <cstdlib>
 
-#include "exoplanet/constants.h"
+#include "constants.h"
 
 namespace exoplanet {
 namespace kepler {

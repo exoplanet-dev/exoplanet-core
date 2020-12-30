@@ -16,7 +16,10 @@ ops = pytest.importorskip("exoplanet_core.theano.ops")
 try:
     from theano.link.jax import JAXLinker
 except ImportError:
-    JAXLinker = pytest.importorskip("theano.sandbox.jax_linker.JAXLinker")
+    try:
+        from theano.sandbox.jax_linker import JAXLinker
+    except ImportError:
+        pytest.skip("Theano-PyMC not installed", allow_module_level=True)
 
 
 @pytest.fixture
@@ -29,6 +32,13 @@ def kepler_data():
     return M, e, f
 
 
+@pytest.fixture
+def limbdark_data():
+    r = np.linspace(0.01, 1.5, 5)
+    b = np.linspace(-1, 1, 500)[:, None] * (1 + r[None, :])
+    return (b, r[None, :] + np.zeros_like(b))
+
+
 def compare_theano_and_jax(
     fgraph,
     inputs,
@@ -39,7 +49,7 @@ def compare_theano_and_jax(
         assert_fn = partial(np.testing.assert_allclose, rtol=1e-4)
 
     opts = theano.gof.Query(include=[None], exclude=["cxx_only", "BlasOpt"])
-    jax_mode = theano.compile.mode.Mode(theano.link.jax.JAXLinker(), opts)
+    jax_mode = theano.compile.mode.Mode(JAXLinker(), opts)
     py_mode = theano.compile.Mode("py", opts)
 
     theano_jax_fn = theano.function(
@@ -73,3 +83,31 @@ def test_kepler(kepler_data):
     e = tt.dmatrix()
     out_fg = theano.gof.FunctionGraph([M, e], ops.kepler(M, e))
     compare_theano_and_jax(out_fg, kepler_data[:2])
+
+
+def test_quad_solution_vector(limbdark_data):
+    b = tt.dmatrix()
+    r = tt.dmatrix()
+    out_fg = theano.gof.FunctionGraph([b, r], [ops.quad_solution_vector(b, r)])
+    compare_theano_and_jax(out_fg, limbdark_data)
+
+
+def test_contact_points():
+    args = [tt.dvector() for _ in range(7)]
+
+    N = 25
+    L = 1.2 + np.zeros(N)
+    a = 12.56 + np.zeros(N)
+    e = np.linspace(0, 1, N)
+    w = np.linspace(-np.pi, np.pi, N)
+    b = np.linspace(0, 1 - 1e-5, N)
+
+    cosw = np.cos(w)
+    sinw = np.sin(w)
+    incl_factor = (1 + e * sinw) / (1 - e ** 2)
+    cosi = incl_factor * b * L / a
+    i = np.arccos(cosi)
+    sini = np.sin(i)
+
+    out_fg = theano.gof.FunctionGraph(args, ops.contact_points(*args))
+    compare_theano_and_jax(out_fg, [a, e, cosw, sinw, cosi, sini, L])

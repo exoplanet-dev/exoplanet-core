@@ -6,15 +6,10 @@
 #include <tuple>
 #include <vector>
 
-#include "exoplanet/constants.h"
+#include "constants.h"
 
 namespace exoplanet {
 namespace contact_points {
-
-template <typename T>
-int sgn(T val) {
-  return (T(0) < val) - (val < T(0));
-}
 
 template <typename Scalar>
 class ContactPointSolver {

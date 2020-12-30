@@ -3,7 +3,7 @@
 
 #include <cmath>
 
-#include "exoplanet/constants.h"
+#include "constants.h"
 
 namespace exoplanet {
 namespace internal {

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__all__ = ["kepler", "quad_solution_vector"]
+__all__ = ["kepler", "quad_solution_vector", "contact_points"]
 
 from functools import partial
 
@@ -15,11 +15,9 @@ from . import xla_driver
 
 xops = xla_client.ops
 
-#    _            _
-#   | |_____ _ __| |___ _ _
-#   | / / -_) '_ \ / -_) '_|
-#   |_\_\___| .__/_\___|_|
-#           |_|
+# **********
+# * KEPLER *
+# **********
 xla_client.register_cpu_custom_call_target(
     b"solve_kepler", xla_driver.solve_kepler()
 )
@@ -53,7 +51,7 @@ def kepler(M, ecc):
     return kepler_prim.bind(M, ecc)
 
 
-def kepler_abstract_eval(M, ecc):
+def _kepler_abstract_eval(M, ecc):
     if M.dtype != np.float64 or ecc.dtype != np.float64:
         raise ValueError("float64 precision is required")
     if M.shape != ecc.shape:
@@ -62,7 +60,7 @@ def kepler_abstract_eval(M, ecc):
     return (out_shape, out_shape)
 
 
-def kepler_translation_rule(c, M, ecc):
+def _kepler_translation_rule(c, M, ecc):
     shapes = (c.get_shape(M), c.get_shape(ecc))
     if any(shape.element_type() != np.float64 for shape in shapes):
         raise ValueError("float64 precision is required")
@@ -88,7 +86,7 @@ def kepler_translation_rule(c, M, ecc):
     )
 
 
-def kepler_jvp(args, tangents):
+def _kepler_jvp(args, tangents):
     M, e = args
     dM, de = tangents
     cosf, sinf = kepler(M, e)
@@ -107,7 +105,7 @@ def kepler_jvp(args, tangents):
     return (cosf, sinf), (-sinf * df, cosf * df)
 
 
-def kepler_batch(args, axes):
+def _kepler_batch(args, axes):
     assert axes[0] == axes[1]
     return kepler(*args), axes
 
@@ -115,19 +113,23 @@ def kepler_batch(args, axes):
 kepler_prim = core.Primitive("kepler")
 kepler_prim.multiple_results = True
 kepler_prim.def_impl(partial(xla.apply_primitive, kepler_prim))
-kepler_prim.def_abstract_eval(kepler_abstract_eval)
-xla.backend_specific_translations["cpu"][kepler_prim] = kepler_translation_rule
-ad.primitive_jvps[kepler_prim] = kepler_jvp
-batching.primitive_batchers[kepler_prim] = kepler_batch
+kepler_prim.def_abstract_eval(_kepler_abstract_eval)
+xla.backend_specific_translations["cpu"][
+    kepler_prim
+] = _kepler_translation_rule
+ad.primitive_jvps[kepler_prim] = _kepler_jvp
+batching.primitive_batchers[kepler_prim] = _kepler_batch
 
-#       _
-#    __| |_ __ _ _ _ _ _ _  _
-#   (_-<  _/ _` | '_| '_| || |
-#   /__/\__\__,_|_| |_|  \_, |
-#                        |__/
+# **********
+# * STARRY *
+# **********
 xla_client.register_cpu_custom_call_target(
     b"quad_solution_vector", xla_driver.quad_solution_vector()
 )
+
+
+def _base_quad_solution_vector(b, r):
+    return quad_solution_vector_prim.bind(b, r)
 
 
 def quad_solution_vector(b, r):
@@ -143,15 +145,14 @@ def quad_solution_vector(b, r):
         r: The radius ratio
 
     Returns:
-        (s, dsdb, dsdr): The solution vector and its first derivatives. Each
-            will have the shape ``[..., 3]``, where ``...`` indicates the shape
-            of ``b`` or ``r``.
+        The solution vector with the shape ``[..., 3]``, where ``...``
+        indicates the shape of ``b`` or ``r``.
 
     """
-    return quad_solution_vector_prim.bind(b, r)[0]
+    return _base_quad_solution_vector(b, r)[0]
 
 
-def quad_solution_vector_abstract_eval(b, r):
+def _quad_solution_vector_abstract_eval(b, r):
     if b.dtype != np.float64 or r.dtype != np.float64:
         raise ValueError("float64 precision is required")
     if b.shape != r.shape:
@@ -160,7 +161,7 @@ def quad_solution_vector_abstract_eval(b, r):
     return (out_shape, out_shape, out_shape)
 
 
-def quad_solution_vector_translation_rule(c, b, r):
+def _quad_solution_vector_translation_rule(c, b, r):
     shapes = (c.get_shape(b), c.get_shape(r))
     if any(shape.element_type() != np.float64 for shape in shapes):
         raise ValueError("float64 precision is required")
@@ -204,11 +205,11 @@ def quad_solution_vector_translation_rule(c, b, r):
 #       confusing error so there's probably a better solution. But that
 #       solution is not returning ad.Zero because that makes higher-order
 #       derivatives execute and spit out nonsense.
-def quad_solution_vector_jvp(args, tangents):
+def _quad_solution_vector_jvp(args, tangents):
     b, r = args
     db, dr = tangents
 
-    s, dsdb, dsdr = quad_solution_vector_prim.bind(b, r)
+    s, dsdb, dsdr = _base_quad_solution_vector(b, r)
 
     disconnected_b = type(db) is ad.Zero
     disconnected_r = type(dr) is ad.Zero
@@ -225,7 +226,7 @@ def quad_solution_vector_jvp(args, tangents):
     return (s, dsdb, dsdr), (ds, None, None)
 
 
-def quad_solution_vector_batch(args, axes):
+def _quad_solution_vector_batch(args, axes):
     assert axes[0] == axes[1]
     return quad_solution_vector(*args), axes
 
@@ -235,11 +236,84 @@ quad_solution_vector_prim.multiple_results = True
 quad_solution_vector_prim.def_impl(
     partial(xla.apply_primitive, quad_solution_vector_prim)
 )
-quad_solution_vector_prim.def_abstract_eval(quad_solution_vector_abstract_eval)
+quad_solution_vector_prim.def_abstract_eval(
+    _quad_solution_vector_abstract_eval
+)
 xla.backend_specific_translations["cpu"][
     quad_solution_vector_prim
-] = quad_solution_vector_translation_rule
-ad.primitive_jvps[quad_solution_vector_prim] = quad_solution_vector_jvp
+] = _quad_solution_vector_translation_rule
+ad.primitive_jvps[quad_solution_vector_prim] = _quad_solution_vector_jvp
 batching.primitive_batchers[
     quad_solution_vector_prim
-] = quad_solution_vector_batch
+] = _quad_solution_vector_batch
+
+
+# ******************
+# * CONTACT POINTS *
+# ******************
+xla_client.register_cpu_custom_call_target(
+    b"contact_points", xla_driver.contact_points()
+)
+
+
+def contact_points(a, e, cosw, sinw, cosi, sini, L):
+    return contact_points_prim.bind(a, e, cosw, sinw, cosi, sini, L)
+
+
+def _contact_points_abstract_eval(*args):
+    if any(a.dtype != np.float64 for a in args):
+        raise ValueError("float64 precision is required")
+    shape = args[0].shape
+    if any(a.shape != shape for a in args[1:]):
+        raise ValueError("Dimension mismatch")
+    return (
+        ShapedArray(shape, np.float64),
+        ShapedArray(shape, np.float64),
+        ShapedArray(shape, np.int32),
+    )
+
+
+def _contact_points_translation_rule(c, *args):
+    shapes = list(map(c.get_shape, args))
+    if any(shape.element_type() != np.float64 for shape in shapes):
+        raise ValueError("float64 precision is required")
+
+    dims = tuple(shapes[0].dimensions())
+    if any(dims != s.dimensions() for s in shapes):
+        raise ValueError("Dimension mismatch")
+    N = np.prod(dims).astype(np.int32)
+
+    order = tuple(range(len(dims) - 1, -1, -1))
+    shape = xla_client.Shape.array_shape(jnp.dtype(np.float64), dims, order)
+
+    return xops.CustomCallWithLayout(
+        c,
+        b"contact_points",
+        operands=(xops.ConstantLiteral(c, N),) + args,
+        shape_with_layout=xla_client.Shape.tuple_shape(
+            (
+                shape,
+                shape,
+                xla_client.Shape.array_shape(jnp.dtype(np.int32), dims, order),
+            )
+        ),
+        operand_shapes_with_layout=(
+            xla_client.Shape.array_shape(jnp.dtype(jnp.int32), (), ()),
+        )
+        + tuple(shape for _ in args),
+    )
+
+
+def _contact_points_batch(args, axes):
+    assert axes[0] == axes[1]
+    return contact_points(*args), axes
+
+
+contact_points_prim = core.Primitive("contact_points")
+contact_points_prim.multiple_results = True
+contact_points_prim.def_impl(partial(xla.apply_primitive, contact_points_prim))
+contact_points_prim.def_abstract_eval(_contact_points_abstract_eval)
+xla.backend_specific_translations["cpu"][
+    contact_points_prim
+] = _contact_points_translation_rule
+batching.primitive_batchers[contact_points_prim] = _contact_points_batch

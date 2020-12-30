@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <cmath>
 
-#include "exoplanet/ellip.h"
+#include "ellip.h"
 
 namespace exoplanet {
 namespace limbdark {

@@ -2,6 +2,8 @@
 
 __all__ = ["kepler", "quad_solution_vector"]
 
+from itertools import chain
+
 import numpy as np
 import theano
 import theano.tensor as tt
@@ -26,11 +28,9 @@ def resize_or_set(outputs, n, shape, dtype=np.float64):
     return outputs[n][0]
 
 
-#    _            _
-#   | |_____ _ __| |___ _ _
-#   | / / -_) '_ \ / -_) '_|
-#   |_\_\___| .__/_\___|_|
-#           |_|
+# **********
+# * KEPLER *
+# **********
 class Kepler(theano.Op):
     r"""Solve Kepler's equation
 
@@ -104,11 +104,9 @@ class Kepler(theano.Op):
 kepler = Kepler()
 
 
-#       _
-#    __| |_ __ _ _ _ _ _ _  _
-#   (_-<  _/ _` | '_| '_| || |
-#   /__/\__\__,_|_| |_|  \_, |
-#                        |__/
+# **********
+# * STARRY *
+# **********
 class QuadSolutionVector(theano.Op):
     r"""Compute the "solution vector" for a quadratic limb-darkening model
 
@@ -190,6 +188,42 @@ def quad_solution_vector(b, r):
     return _quad_solution_vector(b, r)[0]
 
 
+# ******************
+# * CONTACT POINTS *
+# ******************
+class ContactPoints(theano.Op):
+    __props__ = ()
+
+    def make_node(self, a, e, cosw, sinw, cosi, sini, L):
+        in_args = list(
+            map(as_tensor_variable, (a, e, cosw, sinw, cosi, sini, L))
+        )
+        if any(i.dtype != "float64" for i in in_args):
+            raise ValueError("float64 precision is required")
+        out_args = [
+            in_args[0].type(),
+            in_args[0].type(),
+            tt.tensor(
+                broadcastable=tuple(in_args[0].broadcastable),
+                dtype="int32",
+            ),
+        ]
+        return theano.Apply(self, in_args, out_args)
+
+    def infer_shape(self, node, shapes):
+        return (shapes[0], shapes[0], shapes[0])
+
+    def perform(self, node, inputs, outputs):
+        shape = inputs[0].shape
+        M_left = resize_or_set(outputs, 0, shape)
+        M_right = resize_or_set(outputs, 1, shape)
+        flag = resize_or_set(outputs, 2, shape, dtype=np.int32)
+        driver.contact_points(*chain(inputs, (M_left, M_right, flag)))
+
+
+contact_points = ContactPoints()
+
+
 #    _   _                          _
 #   | |_| |_  ___ __ _ _ _  ___ ___(_)__ ___ __
 #   |  _| ' \/ -_) _` | ' \/ _ \___| / _` \ \ /
@@ -219,6 +253,10 @@ if jax_funcify is not None:
         @jax_funcify.register(QuadSolutionVector)
         def jax_funcify_QuadSolutionVector(op):
             def jax_quad_solution_vector(b, r):
-                return jax_ops.quad_solution_vector_prim.bind(b, r)
+                return jax_ops._base_quad_solution_vector(b, r)
 
             return jax_quad_solution_vector
+
+        @jax_funcify.register(ContactPoints)
+        def jax_funcify_ContactPoints(op):
+            return jax_ops.contact_points

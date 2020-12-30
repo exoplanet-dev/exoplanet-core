@@ -77,6 +77,38 @@ auto quad_solution_vector_with_grad(py::array_t<double, py::array::c_style> b_in
   return s_out;
 }
 
+auto contact_points(py::array_t<double, py::array::c_style> a_in,
+                    py::array_t<double, py::array::c_style> e_in,
+                    py::array_t<double, py::array::c_style> cosw_in,
+                    py::array_t<double, py::array::c_style> sinw_in,
+                    py::array_t<double, py::array::c_style> cosi_in,
+                    py::array_t<double, py::array::c_style> sini_in,
+                    py::array_t<double, py::array::c_style> L_in,
+                    py::array_t<double, py::array::c_style> M_left_out,
+                    py::array_t<double, py::array::c_style> M_right_out,
+                    py::array_t<int, py::array::c_style> flag_out) {
+  const double tol = 1e-10;
+  flat_unchecked_array<double, py::array::c_style> a(a_in), e(e_in), cosw(cosw_in), sinw(sinw_in),
+      cosi(cosi_in), sini(sini_in), L(L_in);
+  flat_unchecked_array<double, py::array::c_style> M_left(M_left_out, true),
+      M_right(M_right_out, true);
+  flat_unchecked_array<int, py::array::c_style> flag(flag_out, true);
+  ssize_t N = a.size();
+  if (e.size() != N || cosw.size() != N || sinw.size() != N || cosi.size() != N ||
+      sini.size() != N || L.size() != N || M_left.size() != N || M_right.size() != N ||
+      flag.size() != N)
+    throw std::invalid_argument("dimension mismatch");
+  for (ssize_t n = 0; n < N; ++n) {
+    auto const solver = exoplanet::contact_points::ContactPointSolver<double>(
+        a(n), e(n), cosw(n), sinw(n), cosi(n), sini(n));
+    auto const roots = solver.find_roots(L(n), tol);
+    flag(n) = std::get<0>(roots);
+    M_left(n) = std::get<1>(roots);
+    M_right(n) = std::get<2>(roots);
+  }
+  return std::make_tuple(M_left_out, M_right_out, flag_out);
+}
+
 }  // namespace driver
 
 PYBIND11_MODULE(driver, m) {
@@ -90,4 +122,8 @@ PYBIND11_MODULE(driver, m) {
   m.def("quad_solution_vector_with_grad", &driver::quad_solution_vector_with_grad, py::arg("b"),
         py::arg("r"), py::arg("s").noconvert(), py::arg("dsdb").noconvert(),
         py::arg("dsdr").noconvert());
+  m.def("contact_points", &driver::contact_points, py::arg("a"), py::arg("e"), py::arg("cosw"),
+        py::arg("sinw"), py::arg("cosi"), py::arg("sini"), py::arg("L"),
+        py::arg("M_left").noconvert(), py::arg("M_right").noconvert(),
+        py::arg("flag").noconvert());
 }
