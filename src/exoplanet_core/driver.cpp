@@ -77,6 +77,25 @@ auto quad_solution_vector_with_grad(py::array_t<double, py::array::c_style> b_in
   return s_out;
 }
 
+auto solve_quartic(py::array_t<double, py::array::c_style> a_in,
+                   py::array_t<double, py::array::c_style> real_out,
+                   py::array_t<double, py::array::c_style> imag_out) {
+  flat_unchecked_array<double, py::array::c_style> a(a_in);
+  flat_unchecked_array<double, py::array::c_style> real(real_out, true), imag(imag_out, true);
+  if (a.size() != 5 || real.size() != 4 || imag.size() != 4)
+    throw std::invalid_argument("invalid dimensions");
+  exoplanet::quartic::Vector poly(5), r(4), i(4);
+  for (int n = 0; n < 5; ++n) poly(n) = a(n);
+  bool flag = exoplanet::quartic::FindPolynomialRoots(poly, &r, &i);
+  if (flag) {
+    for (int n = 0; n < 4; ++n) {
+      real(n) = r(n);
+      imag(n) = i(n);
+    }
+  }
+  return flag;
+}
+
 }  // namespace driver
 
 PYBIND11_MODULE(driver, m) {
@@ -90,4 +109,6 @@ PYBIND11_MODULE(driver, m) {
   m.def("quad_solution_vector_with_grad", &driver::quad_solution_vector_with_grad, py::arg("b"),
         py::arg("r"), py::arg("s").noconvert(), py::arg("dsdb").noconvert(),
         py::arg("dsdr").noconvert());
+  m.def("solve_quartic", &driver::solve_quartic, py::arg("a"), py::arg("real").noconvert(),
+        py::arg("imag").noconvert());
 }
