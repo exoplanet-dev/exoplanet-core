@@ -1,6 +1,7 @@
 #include <exoplanet/kepler.h>
 
 #include "cuda_kernels.h"
+#include "kernel_helpers.h"
 
 namespace exoplanet {
 
