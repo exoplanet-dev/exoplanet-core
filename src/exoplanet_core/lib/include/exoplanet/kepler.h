@@ -19,12 +19,19 @@
 namespace exoplanet {
 namespace kepler {
 
+#ifdef __CUDACC__
+#define INLINE_OR_DEVICE __host__ __device__
+#else
+#define INLINE_OR_DEVICE inline
+#endif
+
 // Evaluate sine with a series expansion.  We can guarantee that the
 // argument will be <=pi/4, and this reaches double precision (within
 // a few machine epsilon) at a signficantly lower cost than the
 // function call to sine that obeys the IEEE standard.
-inline double shortsin(double x) {
-  double x2 = x * x;
+template <typename Scalar>
+INLINE_OR_DEVICE Scalar shortsin(const Scalar &x) {
+  Scalar x2 = x * x;
   return x *
          (1 - x2 * (if3 -
                     x2 * (if5 - x2 * (if7 - x2 * (if9 - x2 * (if11 - x2 * (if13 - x2 * if15)))))));
@@ -32,19 +39,20 @@ inline double shortsin(double x) {
 
 // Modulo 2pi: works best when you use an increment so that the
 // argument isn't too much larger than 2pi.
-double MAmod(double M) {
-  if (M < twopi && M >= 0) return M;
+template <typename Scalar>
+INLINE_OR_DEVICE Scalar MAmod(const Scalar &M_in) {
+  if (M_in < twopi && M_in >= 0) return M_in;
 
-  if (M > twopi) {
-    M -= twopi;
+  if (M_in > twopi) {
+    const Scalar M = M_in - twopi;
     if (M > twopi)
-      return fmod(M, twopi);
+      return fmod(M, Scalar(twopi));
     else
       return M;
   } else {
-    M += twopi;
+    const Scalar M = M_in + twopi;
     if (M < 0)
-      return fmod(M, twopi) + twopi;
+      return fmod(M, Scalar(twopi)) + twopi;
     else
       return M;
   }
@@ -53,21 +61,23 @@ double MAmod(double M) {
 // Use the second-order series expanion in Raposo-Pulido & Pelaez
 // (2017) in the singular corner (eccentricity close to 1, mean
 // anomaly close to zero).
-double EAstart(double M, double ecc) {
-  double ome = 1. - ecc;
-  double sqrt_ome = sqrt(ome);
+template <typename Scalar>
+INLINE_OR_DEVICE Scalar EAstart(const Scalar &M, const Scalar &ecc) {
+  const Scalar ome = 1. - ecc;
+  const Scalar sqrt_ome = sqrt(ome);
 
-  double chi = M / (sqrt_ome * ome);
-  double Lam = sqrt(8 + 9 * chi * chi);
-  double S = cbrt(Lam + 3 * chi);
-  double sigma = 6 * chi / (2 + S * S + 4. / (S * S));
-  double s2 = sigma * sigma;
-  double s4 = s2 * s2;
+  const Scalar chi = M / (sqrt_ome * ome);
+  const Scalar Lam = sqrt(8 + 9 * chi * chi);
+  const Scalar S = cbrt(Lam + 3 * chi);
+  const Scalar sigma = 6 * chi / (2 + S * S + 4. / (S * S));
+  const Scalar s2 = sigma * sigma;
+  const Scalar s4 = s2 * s2;
 
-  double denom = 1.0 / (s2 + 2);
-  double E = sigma * (1 + s2 * ome * denom *
-                              ((s2 + 20) / 60. + s2 * ome * denom * denom *
-                                                     (s2 * s4 + 25 * s4 + 340 * s2 + 840) / 1400));
+  const Scalar denom = 1.0 / (s2 + 2);
+  const Scalar E =
+      sigma * (1 + s2 * ome * denom *
+                       ((s2 + 20) / 60. +
+                        s2 * ome * denom * denom * (s2 * s4 + 25 * s4 + 340 * s2 + 840) / 1400));
 
   return E * sqrt_ome;
 }
@@ -81,21 +91,23 @@ double EAstart(double M, double ecc) {
 // update their values using series.  Accurate to better than 1e-15 in
 // E-ecc*sin(E)-M at all mean anomalies and at eccentricies up to
 // 0.999999.
-void calcEA(double M, double ecc, double *E, double *sinE, double *cosE) {
-  double g2s_e = 0.2588190451025207623489 * ecc;
-  double g3s_e = 0.5 * ecc;
-  double g4s_e = 0.7071067811865475244008 * ecc;
-  double g5s_e = 0.8660254037844386467637 * ecc;
-  double g6s_e = 0.9659258262890682867497 * ecc;
+template <typename Scalar>
+INLINE_OR_DEVICE void calcEA(const Scalar &M, const Scalar &ecc, Scalar &E, Scalar &sinE,
+                             Scalar &cosE) {
+  const Scalar g2s_e = 0.2588190451025207623489 * ecc;
+  const Scalar g3s_e = 0.5 * ecc;
+  const Scalar g4s_e = 0.7071067811865475244008 * ecc;
+  const Scalar g5s_e = 0.8660254037844386467637 * ecc;
+  const Scalar g6s_e = 0.9659258262890682867497 * ecc;
 
-  double bounds[13];
-  double EA_tab[9];
+  Scalar bounds[13];
+  Scalar EA_tab[9];
 
   int k;
-  double MA, EA, sE, cE, x, y;
-  double B0, B1, B2, dx, idx;
+  Scalar MA, EA, sE, cE, x, y;
+  Scalar B0, B1, B2, dx, idx;
   int MAsign = 1;
-  double one_over_ecc = 1e17;
+  Scalar one_over_ecc = 1e17;
   if (ecc > 1e-17) one_over_ecc = 1. / ecc;
 
   MA = MAmod(M);
@@ -103,6 +115,7 @@ void calcEA(double M, double ecc, double *E, double *sinE, double *cosE) {
     MAsign = -1;
     MA = twopi - MA;
   }
+
   // Series expansion
   if (2 * MA + 1 - ecc < 0.2) {
     EA = EAstart(MA, ecc);
@@ -175,7 +188,7 @@ void calcEA(double M, double ecc, double *E, double *sinE, double *cosE) {
     sE = sqrt(1 - cE * cE);
   }
 
-  double num, denom, dEA;
+  Scalar num, denom, dEA;
 
   // Halley's method to update E
   num = (MA - EA) * one_over_ecc + sE;
@@ -184,44 +197,48 @@ void calcEA(double M, double ecc, double *E, double *sinE, double *cosE) {
 
   // Use series to update sin and cos
   if (ecc < 0.78 || MA > 0.4) {
-    *E = MAsign * (EA + dEA);
-    *sinE = MAsign * (sE * (1 - 0.5 * dEA * dEA) + dEA * cE);
-    *cosE = cE * (1 - 0.5 * dEA * dEA) - dEA * sE;
+    E = MAsign * (EA + dEA);
+    sinE = MAsign * (sE * (1 - 0.5 * dEA * dEA) + dEA * cE);
+    cosE = cE * (1 - 0.5 * dEA * dEA) - dEA * sE;
 
   } else {
     // Use Householder's third order method to guarantee performance
     // in the singular corners
     dEA = num / (denom + dEA * (0.5 * sE + one_sixth * cE * dEA));
-    *E = MAsign * (EA + dEA);
-    *sinE = MAsign * (sE * (1 - 0.5 * dEA * dEA) + dEA * cE * (1 - dEA * dEA * one_sixth));
-    *cosE = cE * (1 - 0.5 * dEA * dEA) - dEA * sE * (1 - dEA * dEA * one_sixth);
+    E = MAsign * (EA + dEA);
+    sinE = MAsign * (sE * (1 - 0.5 * dEA * dEA) + dEA * cE * (1 - dEA * dEA * one_sixth));
+    cosE = cE * (1 - 0.5 * dEA * dEA) - dEA * sE * (1 - dEA * dEA * one_sixth);
   }
 
   return;
 }
 
-double solve_kepler(double M, double ecc, double *cosf, double *sinf) {
-  double E;
-  calcEA(M, ecc, &E, sinf, cosf);
+template <typename Scalar>
+INLINE_OR_DEVICE Scalar solve_kepler(const Scalar &M, const Scalar &ecc, Scalar &cosf,
+                                     Scalar &sinf) {
+  Scalar E;
+  calcEA(M, ecc, E, sinf, cosf);
 
-  double denom = 1 + *cosf;
+  Scalar denom = 1 + cosf;
   if (denom > 1.0e-10) {
-    double tanf2 = sqrt((1 + ecc) / (1 - ecc)) * (*sinf) / denom;  // tan(0.5*f)
-    double tanf2_2 = tanf2 * tanf2;
+    Scalar tanf2 = sqrt((1 + ecc) / (1 - ecc)) * sinf / denom;  // tan(0.5*f)
+    Scalar tanf2_2 = tanf2 * tanf2;
 
     // Then we compute sin(f) and cos(f) using:
     // sin(f) = 2*tan(0.5*f)/(1 + tan(0.5*f)^2), and
     // cos(f) = (1 - tan(0.5*f)^2)/(1 + tan(0.5*f)^2)
     denom = 1 / (1 + tanf2_2);
-    *sinf = 2 * tanf2 * denom;
-    *cosf = (1 - tanf2_2) * denom;
+    sinf = 2 * tanf2 * denom;
+    cosf = (1 - tanf2_2) * denom;
   } else {
     // If cos(E) = -1, E = pi and tan(0.5*E) -> inf and f = E = pi
-    *sinf = 0;
-    *cosf = -1;
+    sinf = 0;
+    cosf = -1;
   }
   return E;
 }
+
+#undef INLINE_OR_DEVICE
 
 }  // namespace kepler
 }  // namespace exoplanet

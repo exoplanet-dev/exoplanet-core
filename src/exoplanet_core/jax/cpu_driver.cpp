@@ -1,7 +1,12 @@
 #include <exoplanet/exoplanet.h>
 #include <pybind11/pybind11.h>
 
+#include "pybind11_kernel_helpers.h"
+
 namespace py = pybind11;
+
+namespace exoplanet {
+namespace {
 
 void solve_kepler(void *out_tuple, const void **in) {
   void **out = reinterpret_cast<void **>(out_tuple);
@@ -13,7 +18,7 @@ void solve_kepler(void *out_tuple, const void **in) {
   double *sinf = reinterpret_cast<double *>(out[1]);
 
   for (int n = 0; n < N; ++n) {
-    exoplanet::kepler::solve_kepler(M[n], ecc[n], cosf + n, sinf + n);
+    kepler::solve_kepler(M[n], ecc[n], cosf[n], sinf[n]);
   }
 }
 
@@ -30,8 +35,8 @@ void quad_solution_vector(void *out_tuple, const void **in) {
   for (int n = 0; n < N; ++n) {
     int offset = 3 * n;
     int sgn = exoplanet::sgn(b[n]);
-    exoplanet::limbdark::quad_solution_vector<true>(std::abs(b[n]), r[n], s + offset,
-                                                    dsdb + offset, dsdr + offset);
+    limbdark::quad_solution_vector<true>(std::abs(b[n]), r[n], s + offset, dsdb + offset,
+                                         dsdr + offset);
     dsdb[offset] *= sgn;
     dsdb[offset + 1] *= sgn;
     dsdb[offset + 2] *= sgn;
@@ -56,8 +61,8 @@ void contact_points(void *out_tuple, const void **in) {
   int *flag = reinterpret_cast<int *>(out[2]);
 
   for (int n = 0; n < N; ++n) {
-    auto const solver = exoplanet::contact_points::ContactPointSolver<double>(
-        a[n], e[n], cosw[n], sinw[n], cosi[n], sini[n]);
+    auto const solver =
+        contact_points::ContactPointSolver<double>(a[n], e[n], cosw[n], sinw[n], cosi[n], sini[n]);
     auto const roots = solver.find_roots(L[n], tol);
     flag[n] = std::get<0>(roots);
     M_left[n] = std::get<1>(roots);
@@ -65,19 +70,15 @@ void contact_points(void *out_tuple, const void **in) {
   }
 }
 
-PYBIND11_MODULE(xla_driver, m) {
-  m.def("solve_kepler", []() {
-    const char *name = "xla._CUSTOM_CALL_TARGET";
-    return py::capsule((void *)&solve_kepler, name);
-  });
-
-  m.def("quad_solution_vector", []() {
-    const char *name = "xla._CUSTOM_CALL_TARGET";
-    return py::capsule((void *)&quad_solution_vector, name);
-  });
-
-  m.def("contact_points", []() {
-    const char *name = "xla._CUSTOM_CALL_TARGET";
-    return py::capsule((void *)&contact_points, name);
-  });
+pybind11::dict Registrations() {
+  pybind11::dict dict;
+  dict["solve_kepler"] = EncapsulateFunction(solve_kepler);
+  dict["quad_solution_vector"] = EncapsulateFunction(quad_solution_vector);
+  dict["contact_points"] = EncapsulateFunction(contact_points);
+  return dict;
 }
+
+PYBIND11_MODULE(cpu_driver, m) { m.def("registrations", &Registrations); }
+
+}  // namespace
+}  // namespace exoplanet

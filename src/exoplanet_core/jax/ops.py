@@ -11,18 +11,17 @@ from jax.abstract_arrays import ShapedArray
 from jax.interpreters import ad, batching, xla
 from jax.lib import xla_client
 
-from . import xla_driver
+from . import cpu_driver
 
 xops = xla_client.ops
+
+for _name, _value in cpu_driver.registrations().items():
+    xla_client.register_cpu_custom_call_target(_name, _value)
+
 
 # **********
 # * KEPLER *
 # **********
-xla_client.register_cpu_custom_call_target(
-    b"solve_kepler", xla_driver.solve_kepler()
-)
-
-
 def kepler(M, ecc):
     r"""Solve Kepler's equation
 
@@ -120,14 +119,10 @@ xla.backend_specific_translations["cpu"][
 ad.primitive_jvps[kepler_prim] = _kepler_jvp
 batching.primitive_batchers[kepler_prim] = _kepler_batch
 
+
 # **********
 # * STARRY *
 # **********
-xla_client.register_cpu_custom_call_target(
-    b"quad_solution_vector", xla_driver.quad_solution_vector()
-)
-
-
 def _base_quad_solution_vector(b, r):
     return quad_solution_vector_prim.bind(b, r)
 
@@ -251,11 +246,6 @@ batching.primitive_batchers[
 # ******************
 # * CONTACT POINTS *
 # ******************
-xla_client.register_cpu_custom_call_target(
-    b"contact_points", xla_driver.contact_points()
-)
-
-
 def contact_points(a, e, cosw, sinw, cosi, sini, L):
     return contact_points_prim.bind(a, e, cosw, sinw, cosi, sini, L)
 
