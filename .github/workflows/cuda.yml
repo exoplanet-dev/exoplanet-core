@@ -34,10 +34,18 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install -U pip
+          pip install -U jax jaxlib==0.1.57+cuda102 -f https://storage.googleapis.com/jax-releases/jax_releases.html
           python -m pip install -U numpy pybind11[global]
+          python -m pip install -e .[test]
 
       - name: Configure CMake
-        run: cmake . -B src/exoplanet_core/jax -DCMAKE_BUILD_TYPE=Release
+        run: cmake . -B build -DCMAKE_BUILD_TYPE=Release
 
       - name: Compile the extension
-        run: cmake --build src/exoplanet_core/jax
+        run: |
+          cmake --build build
+          cp build/gpu_driver*.so src/exoplanet_core/jax/
+
+      - name: Run tests
+        shell: bash -l {0}
+        run: python -m pytest -v tests/jax
