@@ -8,8 +8,10 @@
 
 namespace exoplanet {
 
-std::string BuildCudaKeplerDescriptor(int N);
+std::string BuildCudaDescriptor(int N);
 void CudaKepler(cudaStream_t stream, void** buffers, const char* opaque, std::size_t opaque_len);
+void CudaQuadLimbDark(cudaStream_t stream, void** buffers, const char* opaque,
+                      std::size_t opaque_len);
 
 }  // namespace exoplanet
 

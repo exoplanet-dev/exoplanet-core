@@ -45,10 +45,12 @@ void quad_solution_vector(py::array_t<double, py::array::c_style> b_in,
                           py::array_t<double, py::array::c_style> s_out) {
   flat_unchecked_array<double, py::array::c_style> b(b_in), r(r_in);
   flat_unchecked_array<double, py::array::c_style> s(s_out, true);
+  const double eps = std::numeric_limits<double>::epsilon();
+
   ssize_t N = b.size();
   if (r.size() != N || s.size() != 3 * N) throw std::invalid_argument("dimension mismatch");
   for (ssize_t n = 0; n < N; ++n) {
-    exoplanet::limbdark::quad_solution_vector<false>(std::abs(b(n)), r(n), &(s(3 * n)),
+    exoplanet::limbdark::quad_solution_vector<false>(eps, std::abs(b(n)), r(n), &(s(3 * n)),
                                                      (double *)NULL, (double *)NULL);
   }
   // return s_out;
@@ -62,14 +64,15 @@ void quad_solution_vector_with_grad(py::array_t<double, py::array::c_style> b_in
   flat_unchecked_array<double, py::array::c_style> b(b_in), r(r_in);
   flat_unchecked_array<double, py::array::c_style> s(s_out, true), dsdb(dsdb_out, true),
       dsdr(dsdr_out, true);
+  const double eps = std::numeric_limits<double>::epsilon();
   ssize_t N = b.size();
   if (r.size() != N || s.size() != 3 * N || dsdb.size() != 3 * N || dsdr.size() != 3 * N)
     throw std::invalid_argument("dimension mismatch");
   for (ssize_t n = 0; n < N; ++n) {
     ssize_t ind = 3 * n;
     int sgn = exoplanet::sgn(b(n));
-    exoplanet::limbdark::quad_solution_vector<true>(std::abs(b(n)), r(n), &(s(ind)), &(dsdb(ind)),
-                                                    &(dsdr(ind)));
+    exoplanet::limbdark::quad_solution_vector<true>(eps, std::abs(b(n)), r(n), &(s(ind)),
+                                                    &(dsdb(ind)), &(dsdr(ind)));
     dsdb(ind) *= sgn;
     dsdb(ind + 1) *= sgn;
     dsdb(ind + 2) *= sgn;

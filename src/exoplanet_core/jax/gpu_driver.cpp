@@ -9,13 +9,14 @@ namespace {
 pybind11::dict Registrations() {
   pybind11::dict dict;
   dict["cuda_kepler"] = EncapsulateFunction(CudaKepler);
+  dict["cuda_quad_solution_vector"] = EncapsulateFunction(CudaQuadSolutionVector);
   return dict;
 }
 
 PYBIND11_MODULE(gpu_driver, m) {
   m.def("registrations", &Registrations);
-  m.def("cuda_kepler_descriptor", [](int N) {
-    std::string result = BuildCudaKeplerDescriptor(N);
+  m.def("cuda_descriptor", [](int N) {
+    std::string result = BuildCudaDescriptor(N);
     return pybind11::bytes(result);
   });
 }

@@ -13,6 +13,13 @@ jax = pytest.importorskip("jax")
 jnp = pytest.importorskip("jax.numpy")
 ops = pytest.importorskip("exoplanet_core.jax.ops")
 
+try:
+    from jax.lib import xla_bridge
+except ImportError:
+    ON_GPU = False
+else:
+    ON_GPU = xla_bridge.get_backend().platform == "gpu"
+
 
 def compare_to_numpy(nop, op, *args):
     expected = nop(*args)
@@ -91,6 +98,7 @@ def test_quad_solution_vector_grad(limbdark_data):
     check_grads(ops.quad_solution_vector, (b[m], r[m]), 1, eps=eps)
 
 
+@pytest.mark.skipif(ON_GPU, reason="not implemented on GPU")
 @pytest.mark.parametrize("a", [5.0, 12.1234, 20000.0])
 @pytest.mark.parametrize("L", [0.7, 1.0, 1.5])
 def test_contact_points(a, L):

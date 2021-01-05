@@ -106,7 +106,7 @@ def _kepler_gpu_translation_rule(c, M, ecc):
 
     order = tuple(range(len(dims) - 1, -1, -1))
     shape = xla_client.Shape.array_shape(jnp.dtype(np.float64), dims, order)
-    opaque = gpu_driver.cuda_kepler_descriptor(N)
+    opaque = gpu_driver.cuda_descriptor(N)
 
     return xops.CustomCallWithLayout(
         c,
@@ -228,6 +228,46 @@ def _quad_solution_vector_translation_rule(c, b, r):
                 tuple(range(len(dims) - 1, -1, -1)),
             ),
         ),
+    )
+
+
+def _quad_solution_vector_gpu_translation_rule(c, b, r):
+    shapes = (c.get_shape(b), c.get_shape(r))
+    if any(shape.element_type() != np.float64 for shape in shapes):
+        raise ValueError("float64 precision is required")
+
+    dims = tuple(shapes[0].dimensions())
+    if dims != shapes[1].dimensions():
+        raise ValueError("Dimension mismatch")
+    N = np.prod(dims).astype(np.int32)
+
+    out_shape = xla_client.Shape.array_shape(
+        jnp.dtype(np.float64),
+        dims + (3,),
+        tuple(range(len(dims), -1, -1)),
+    )
+    opaque = gpu_driver.cuda_descriptor(N)
+
+    return xops.CustomCallWithLayout(
+        c,
+        b"cuda_quad_solution_vector",
+        operands=(b, r),
+        shape_with_layout=xla_client.Shape.tuple_shape(
+            (out_shape, out_shape, out_shape)
+        ),
+        operand_shapes_with_layout=(
+            xla_client.Shape.array_shape(
+                jnp.dtype(np.float64),
+                dims,
+                tuple(range(len(dims) - 1, -1, -1)),
+            ),
+            xla_client.Shape.array_shape(
+                jnp.dtype(np.float64),
+                dims,
+                tuple(range(len(dims) - 1, -1, -1)),
+            ),
+        ),
+        opaque=opaque,
     )
 
 

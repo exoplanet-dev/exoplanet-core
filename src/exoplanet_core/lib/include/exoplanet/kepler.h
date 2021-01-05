@@ -19,18 +19,12 @@
 namespace exoplanet {
 namespace kepler {
 
-#ifdef __CUDACC__
-#define INLINE_OR_DEVICE __host__ __device__
-#else
-#define INLINE_OR_DEVICE inline
-#endif
-
 // Evaluate sine with a series expansion.  We can guarantee that the
 // argument will be <=pi/4, and this reaches double precision (within
 // a few machine epsilon) at a signficantly lower cost than the
 // function call to sine that obeys the IEEE standard.
 template <typename Scalar>
-INLINE_OR_DEVICE Scalar shortsin(const Scalar &x) {
+EXOPLANET_INLINE_OR_DEVICE Scalar shortsin(const Scalar &x) {
   Scalar x2 = x * x;
   return x *
          (1 - x2 * (if3 -
@@ -40,7 +34,7 @@ INLINE_OR_DEVICE Scalar shortsin(const Scalar &x) {
 // Modulo 2pi: works best when you use an increment so that the
 // argument isn't too much larger than 2pi.
 template <typename Scalar>
-INLINE_OR_DEVICE Scalar MAmod(const Scalar &M_in) {
+EXOPLANET_INLINE_OR_DEVICE Scalar MAmod(const Scalar &M_in) {
   if (M_in < twopi && M_in >= 0) return M_in;
 
   if (M_in > twopi) {
@@ -62,7 +56,7 @@ INLINE_OR_DEVICE Scalar MAmod(const Scalar &M_in) {
 // (2017) in the singular corner (eccentricity close to 1, mean
 // anomaly close to zero).
 template <typename Scalar>
-INLINE_OR_DEVICE Scalar EAstart(const Scalar &M, const Scalar &ecc) {
+EXOPLANET_INLINE_OR_DEVICE Scalar EAstart(const Scalar &M, const Scalar &ecc) {
   const Scalar ome = 1. - ecc;
   const Scalar sqrt_ome = sqrt(ome);
 
@@ -92,7 +86,8 @@ INLINE_OR_DEVICE Scalar EAstart(const Scalar &M, const Scalar &ecc) {
 // E-ecc*sin(E)-M at all mean anomalies and at eccentricies up to
 // 0.999999.
 template <typename Scalar>
-INLINE_OR_DEVICE void calcEA(const Scalar &M, const Scalar &ecc, Scalar *sinE, Scalar *cosE) {
+EXOPLANET_INLINE_OR_DEVICE void calcEA(const Scalar &M, const Scalar &ecc, Scalar *sinE,
+                                       Scalar *cosE) {
   const Scalar g2s_e = 0.2588190451025207623489 * ecc;
   const Scalar g3s_e = 0.5 * ecc;
   const Scalar g4s_e = 0.7071067811865475244008 * ecc;
@@ -213,8 +208,8 @@ INLINE_OR_DEVICE void calcEA(const Scalar &M, const Scalar &ecc, Scalar *sinE, S
 }
 
 template <typename Scalar>
-INLINE_OR_DEVICE void solve_kepler(const Scalar &M, const Scalar &ecc, Scalar *cosf,
-                                   Scalar *sinf) {
+EXOPLANET_INLINE_OR_DEVICE void solve_kepler(const Scalar &M, const Scalar &ecc, Scalar *cosf,
+                                             Scalar *sinf) {
   calcEA(M, ecc, sinf, cosf);
 
   Scalar denom = 1 + (*cosf);
@@ -234,8 +229,6 @@ INLINE_OR_DEVICE void solve_kepler(const Scalar &M, const Scalar &ecc, Scalar *c
     *cosf = -1;
   }
 }
-
-#undef INLINE_OR_DEVICE
 
 }  // namespace kepler
 }  // namespace exoplanet
