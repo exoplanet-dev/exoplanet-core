@@ -16,13 +16,9 @@ jobs:
     steps:
       - name: Install git
         run: |
+          add-apt-repository ppa:git-core/ppa
           apt-get update
-          apt-get install -y wget make libssl-dev libghc-zlib-dev libcurl4-gnutls-dev libexpat1-dev gettext unzip
-          wget https://github.com/git/git/archive/v2.23.0.tar.gz -O git.tar.gz
-          tar -xf git.tar.gz
-          cd git-*
-          make prefix=/usr/local all
-          make prefix=/usr/local install
+          apt-get install -y wget git
           git --version
 
       - name: Install CMake
