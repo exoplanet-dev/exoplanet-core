@@ -37,22 +37,5 @@ jobs:
         id: configure
         run: cmake . -B src/exoplanet_core/jax -DCMAKE_BUILD_TYPE=Release
 
-      - name: Configure Error Processing
-        if: ${{ failure() && steps.configure.outcome == 'failure' }}
-        working-directory: ${{ env.build_dir }}
-        run: |
-          if [[ -f "CMakeFiles/CMakeOutput.log" ]]; then
-            echo "---- CMakeFiles/CMakeOutput.log"
-            cat CMakeFiles/CMakeOutput.log
-            echo "----"
-          fi
-          if [[ -f "CMakeFiles/CMakeError.log" ]]; then
-            echo "---- CMakeFiles/CMakeError.log"
-            cat CMakeFiles/CMakeError.log
-            echo "----"
-          fi
-
-      - name: Build everything else
-        working-directory: ${{ env.build_dir }}
-        run: cmake --build . --target all --verbose -j `nproc`
-        shell: bash -l {0}
+      - name: Build
+        run: cmake --build src/exoplanet_core/jax
