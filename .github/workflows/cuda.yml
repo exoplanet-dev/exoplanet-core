@@ -22,8 +22,8 @@ jobs:
 
       - name: Get the version info for NVCC and CMake
         run: |
-        nvcc --version
-        cmake --version
+          nvcc --version
+          cmake --version
 
       - uses: actions/checkout@v2
 
