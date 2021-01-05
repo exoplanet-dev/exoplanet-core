@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15...3.18)
+cmake_minimum_required(VERSION 3.12...3.18)
 project(exoplanet_core LANGUAGES CXX CUDA)
 
 set(CMAKE_CXX_STANDARD 14 CACHE STRING "C++ version selection")
