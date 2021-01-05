@@ -14,13 +14,16 @@ jobs:
     container: nvidia/cuda:10.2-devel-ubuntu18.04
 
     steps:
-      - run: nvcc --version
+      - name: Install system dependencies
+        run: apt-get update && apt-get install -y wget git
 
-      - name: Add wget
-        run: apt-get update && apt-get install -y wget
-      - name: Setup cmake
+      - name: Install CMake
         uses: jwlawson/actions-setup-cmake@v1.5
-      - run: cmake --version
+
+      - name: Get the version info for NVCC and CMake
+        run: |
+        nvcc --version
+        cmake --version
 
       - uses: actions/checkout@v2
 
@@ -33,9 +36,8 @@ jobs:
           python -m pip install -U pip
           python -m pip install -U numpy pybind11[global]
 
-      - name: Configure cmake
-        id: configure
+      - name: Configure CMake
         run: cmake . -B src/exoplanet_core/jax -DCMAKE_BUILD_TYPE=Release
 
-      - name: Build
+      - name: Compile the extension
         run: cmake --build src/exoplanet_core/jax
