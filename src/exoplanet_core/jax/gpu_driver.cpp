@@ -3,7 +3,7 @@
 #include "cuda_kernels.h"
 #include "pybind11_kernel_helpers.h"
 
-namespace jax {
+namespace exoplanet {
 namespace {
 
 pybind11::dict Registrations() {
@@ -21,4 +21,4 @@ PYBIND11_MODULE(cuda_prng_kernels, m) {
 }
 
 }  // namespace
-}  // namespace jax
+}  // namespace exoplanet
