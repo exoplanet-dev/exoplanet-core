@@ -3,8 +3,6 @@
 
 #include <pybind11/pybind11.h>
 
-#include <bit>
-
 #include "kernel_helpers.h"
 
 namespace exoplanet {
