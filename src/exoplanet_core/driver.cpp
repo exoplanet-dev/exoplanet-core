@@ -23,7 +23,7 @@ struct flat_unchecked_array {
   Scalar *data;
 };
 
-auto solve_kepler(py::array_t<double, py::array::c_style> M_in,
+void solve_kepler(py::array_t<double, py::array::c_style> M_in,
                   py::array_t<double, py::array::c_style> ecc_in,
                   py::array_t<double, py::array::c_style> cosf_out,
                   py::array_t<double, py::array::c_style> sinf_out) {
@@ -35,12 +35,12 @@ auto solve_kepler(py::array_t<double, py::array::c_style> M_in,
   for (ssize_t n = 0; n < N; ++n) {
     if (ecc(n) < 0 || ecc(n) > 1)
       throw std::invalid_argument("eccentricity must be in the range [0, 1)");
-    exoplanet::kepler::solve_kepler(M(n), ecc(n), cosf + n, sinf + n);
+    exoplanet::kepler::solve_kepler(M(n), ecc(n), &(cosf(n)), &(sinf(n)));
   }
-  return std::make_tuple(cosf_out, sinf_out);
+  // return std::make_tuple(cosf_out, sinf_out);
 }
 
-auto quad_solution_vector(py::array_t<double, py::array::c_style> b_in,
+void quad_solution_vector(py::array_t<double, py::array::c_style> b_in,
                           py::array_t<double, py::array::c_style> r_in,
                           py::array_t<double, py::array::c_style> s_out) {
   flat_unchecked_array<double, py::array::c_style> b(b_in), r(r_in);
@@ -51,10 +51,10 @@ auto quad_solution_vector(py::array_t<double, py::array::c_style> b_in,
     exoplanet::limbdark::quad_solution_vector<false>(std::abs(b(n)), r(n), &(s(3 * n)),
                                                      (double *)NULL, (double *)NULL);
   }
-  return s_out;
+  // return s_out;
 }
 
-auto quad_solution_vector_with_grad(py::array_t<double, py::array::c_style> b_in,
+void quad_solution_vector_with_grad(py::array_t<double, py::array::c_style> b_in,
                                     py::array_t<double, py::array::c_style> r_in,
                                     py::array_t<double, py::array::c_style> s_out,
                                     py::array_t<double, py::array::c_style> dsdb_out,
@@ -74,10 +74,10 @@ auto quad_solution_vector_with_grad(py::array_t<double, py::array::c_style> b_in
     dsdb(ind + 1) *= sgn;
     dsdb(ind + 2) *= sgn;
   }
-  return s_out;
+  // return s_out;
 }
 
-auto contact_points(py::array_t<double, py::array::c_style> a_in,
+void contact_points(py::array_t<double, py::array::c_style> a_in,
                     py::array_t<double, py::array::c_style> e_in,
                     py::array_t<double, py::array::c_style> cosw_in,
                     py::array_t<double, py::array::c_style> sinw_in,
@@ -106,7 +106,7 @@ auto contact_points(py::array_t<double, py::array::c_style> a_in,
     M_left(n) = std::get<1>(roots);
     M_right(n) = std::get<2>(roots);
   }
-  return std::make_tuple(M_left_out, M_right_out, flag_out);
+  // return std::make_tuple(M_left_out, M_right_out, flag_out);
 }
 
 }  // namespace driver
