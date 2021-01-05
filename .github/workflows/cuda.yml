@@ -36,6 +36,7 @@ jobs:
           sudo apt-get install -y cmake
           cmake --version
           cmake . -B ${{ env.build_dir }} -DCMAKE_BUILD_TYPE=${{ env.config }}
+        shell: bash -l {0}
 
       - name: Configure Error Processing
         if: ${{ failure() && steps.configure.outcome == 'failure' }}
@@ -51,6 +52,7 @@ jobs:
             cat CMakeFiles/CMakeError.log
             echo "----"
           fi
+        shell: bash -l {0}
 
       # - name: Build everything else
       #   working-directory: ${{ env.build_dir }}
