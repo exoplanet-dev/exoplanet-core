@@ -1,0 +1,59 @@
+name: CUDA
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  release:
+    types:
+      - published
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    container: nvidia/cuda:11.1-devel-ubuntu20.04
+    env:
+      build_dir: "build"
+      config: "Release"
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+          python-version: 3.8
+
+      - name: Install Python dependencies
+        run: python -m pip install -U numpy pybind11[global]
+        shell: bash -l {0}
+
+      - name: Configure cmake
+        id: configure
+        run: cmake . -B ${{ env.build_dir }} -DCMAKE_BUILD_TYPE=${{ env.config }}
+        shell: bash -l {0}
+
+      - name: Configure Error Processing
+        if: ${{ failure() && steps.configure.outcome == 'failure' }}
+        working-directory: ${{ env.build_dir }}
+        run: |
+          if [[ -f "CMakeFiles/CMakeOutput.log" ]]; then
+            echo "---- CMakeFiles/CMakeOutput.log"
+            cat CMakeFiles/CMakeOutput.log
+            echo "----"
+          fi
+          if [[ -f "CMakeFiles/CMakeError.log" ]]; then
+            echo "---- CMakeFiles/CMakeError.log"
+            cat CMakeFiles/CMakeError.log
+            echo "----"
+          fi
+        shell: bash -l {0}
+
+      # - name: Build everything else
+      #   working-directory: ${{ env.build_dir }}
+      #   run: cmake --build . --target all --verbose -j `nproc`
+      #   shell: bash -l {0}
