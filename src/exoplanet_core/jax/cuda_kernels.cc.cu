@@ -9,7 +9,7 @@ namespace {
 template <typename Scalar>
 __global__ void KeplerKernel(int N, const Scalar* M, const Scalar* ecc, Scalar* cosf,
                              Scalar* sinf) {
-  for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < n; idx += blockDim.x * gridDim.x) {
+  for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < N; idx += blockDim.x * gridDim.x) {
     exoplanet::kepler::solve_kepler<Scalar>(M[idx], ecc[idx], cosf[idx], sinf[idx]);
   }
 }
