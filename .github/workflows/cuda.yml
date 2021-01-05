@@ -10,15 +10,16 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
-    container: nvidia/cuda:11.1-devel-ubuntu20.04
-    env:
-      build_dir: "build"
-      config: "Release"
+    runs-on: ubuntu-18.04
+    container: nvidia/cuda:10.2-devel-ubuntu18.04
 
     steps:
       - run: nvcc --version
-      - run: apt-get install -y cmake
+
+      - name: Add wget
+        run: apt-get update && apt-get install -y wget
+      - name: Setup cmake
+        uses: jwlawson/actions-setup-cmake@v1.5
       - run: cmake --version
 
       - uses: actions/checkout@v2
@@ -34,7 +35,7 @@ jobs:
 
       - name: Configure cmake
         id: configure
-        run: cmake . -B ${{ env.build_dir }} -DCMAKE_BUILD_TYPE=${{ env.config }}
+        run: cmake . -B src/exoplanet_core/jax -DCMAKE_BUILD_TYPE=Release
 
       - name: Configure Error Processing
         if: ${{ failure() && steps.configure.outcome == 'failure' }}
@@ -51,7 +52,7 @@ jobs:
             echo "----"
           fi
 
-      # - name: Build everything else
-      #   working-directory: ${{ env.build_dir }}
-      #   run: cmake --build . --target all --verbose -j `nproc`
-      #   shell: bash -l {0}
+      - name: Build everything else
+        working-directory: ${{ env.build_dir }}
+        run: cmake --build . --target all --verbose -j `nproc`
+        shell: bash -l {0}
