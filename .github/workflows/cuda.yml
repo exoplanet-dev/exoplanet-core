@@ -14,8 +14,16 @@ jobs:
     container: nvidia/cuda:10.2-devel-ubuntu18.04
 
     steps:
-      - name: Install system dependencies
-        run: apt-get update && apt-get install -y wget git
+      - name: Install git
+        run: |
+          apt-get update
+          apt-get install -y wget make libssl-dev libghc-zlib-dev libcurl4-gnutls-dev libexpat1-dev gettext unzip
+          wget https://github.com/git/git/archive/v2.23.0.tar.gz -O git.tar.gz
+          tar -xf git.tar.gz
+          cd git-*
+          make prefix=/usr/local all
+          make prefix=/usr/local install
+          git --version
 
       - name: Install CMake
         uses: jwlawson/actions-setup-cmake@v1.5
