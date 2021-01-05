@@ -12,7 +12,7 @@ include_directories(${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 include_directories(${CMAKE_CURRENT_LIST_DIR}/src/exoplanet_core/lib/include)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/src/exoplanet_core/jax)
 
-add_library(cuda_kernels STATIC ${CMAKE_CURRENT_LIST_DIR}/src/exoplanet_core/jax/cuda_kernels.cu.cc)
+add_cuda_library(cuda_kernels STATIC ${CMAKE_CURRENT_LIST_DIR}/src/exoplanet_core/jax/cuda_kernels.cu.cc)
 set_target_properties(cuda_kernels PROPERTIES POSITION_INDEPENDENT_CODE ON
                                               CUDA_VISIBILITY_PRESET "hidden")
 
