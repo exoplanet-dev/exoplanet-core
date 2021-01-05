@@ -1,7 +1,7 @@
 #include <pybind11/pybind11.h>
 
 #include "cuda_kernels.h"
-#include "kernel_pybind11_helpers.h"
+#include "pybind11_kernel_helpers.h"
 
 namespace jax {
 namespace {
