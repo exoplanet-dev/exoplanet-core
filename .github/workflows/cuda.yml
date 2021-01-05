@@ -17,10 +17,9 @@ jobs:
       config: "Release"
 
     steps:
+      - run: nvcc --version
+
       - uses: actions/checkout@v2
-        with:
-          submodules: true
-          fetch-depth: 0
 
       - name: Set up Python
         uses: conda-incubator/setup-miniconda@v2
