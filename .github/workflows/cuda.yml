@@ -18,6 +18,8 @@ jobs:
 
     steps:
       - run: nvcc --version
+      - run: apt-get update && apt-get install -y cmake
+      - run: cmake --version
 
       - uses: actions/checkout@v2
 
@@ -32,11 +34,7 @@ jobs:
 
       - name: Configure cmake
         id: configure
-        run: |
-          sudo apt-get install -y cmake
-          cmake --version
-          cmake . -B ${{ env.build_dir }} -DCMAKE_BUILD_TYPE=${{ env.config }}
-        shell: bash -l {0}
+        run: cmake . -B ${{ env.build_dir }} -DCMAKE_BUILD_TYPE=${{ env.config }}
 
       - name: Configure Error Processing
         if: ${{ failure() && steps.configure.outcome == 'failure' }}
@@ -52,7 +50,6 @@ jobs:
             cat CMakeFiles/CMakeError.log
             echo "----"
           fi
-        shell: bash -l {0}
 
       # - name: Build everything else
       #   working-directory: ${{ env.build_dir }}
