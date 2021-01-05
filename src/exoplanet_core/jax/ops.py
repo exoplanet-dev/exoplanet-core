@@ -313,6 +313,9 @@ quad_solution_vector_prim.def_abstract_eval(
 xla.backend_specific_translations["cpu"][
     quad_solution_vector_prim
 ] = _quad_solution_vector_translation_rule
+xla.backend_specific_translations["gpu"][
+    quad_solution_vector_prim
+] = _quad_solution_vector_gpu_translation_rule
 ad.primitive_jvps[quad_solution_vector_prim] = _quad_solution_vector_jvp
 batching.primitive_batchers[
     quad_solution_vector_prim
