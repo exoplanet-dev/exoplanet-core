@@ -12,7 +12,7 @@ pybind11::dict Registrations() {
   return dict;
 }
 
-PYBIND11_MODULE(cuda_prng_kernels, m) {
+PYBIND11_MODULE(gpu_driver, m) {
   m.def("registrations", &Registrations);
   m.def("cuda_kepler_descriptor", [](int N) {
     std::string result = BuildCudaKeplerDescriptor(N);
