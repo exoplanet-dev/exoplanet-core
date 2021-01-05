@@ -18,7 +18,7 @@ void solve_kepler(void *out_tuple, const void **in) {
   double *sinf = reinterpret_cast<double *>(out[1]);
 
   for (int n = 0; n < N; ++n) {
-    kepler::solve_kepler(M[n], ecc[n], cosf[n], sinf[n]);
+    kepler::solve_kepler(M[n], ecc[n], cosf + n, sinf + n);
   }
 }
 
