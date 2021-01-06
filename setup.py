@@ -24,12 +24,6 @@ CLASSIFIERS = [
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
 ]
-SETUP_REQUIRES = [
-    "setuptools>=42",
-    "wheel",
-    "setuptools_scm[toml]>=3.4",
-    "pybind11>=2.6",
-]
 INSTALL_REQUIRES = ["numpy>=1.13.0"]
 EXTRA_REQUIRE = {
     "test": ["pytest", "pytest-cov>=2.6.1"],
@@ -102,7 +96,6 @@ if __name__ == "__main__":
         install_requires=INSTALL_REQUIRES,
         extras_require=EXTRA_REQUIRE,
         classifiers=CLASSIFIERS,
-        setup_requires=SETUP_REQUIRES,
         zip_safe=False,
         ext_modules=ext_modules,
         cmdclass={"build_ext": build_ext},

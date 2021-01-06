@@ -1,4 +1,6 @@
-include README.md LICENSE *.rst *.toml *.yml *.yaml
+include README.md LICENSE *.toml *.yaml
 
-graft src/exoplanet_core/lib/include
-graft src/exoplanet_core/lib/vendor/eigen
+recursive-include src/exoplanet_core/lib/include *.h
+
+exclude .*
+prune .github
