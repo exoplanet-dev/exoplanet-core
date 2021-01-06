@@ -87,14 +87,16 @@ def run_cmake(build_temp, debug=False):
     )
 
 
-class BuildExt(build_ext):
-    def build_extensions(self):
-        # Start by building the GPU extension if requested
-        if os.environ.get("EXOPLANET_CORE_CUDA", "no").lower() == "yes":
-            run_cmake(self.build_temp, debug=self.debug)
+class DummyExtension(Pybind11Extension):
+    pass
 
-        # Build the other extensions
-        build_ext.build_extensions(self)
+
+class BuildExt(build_ext):
+    def build_extension(self, ext):
+        if isinstance(ext, DummyExtension):
+            run_cmake(self.build_temp, debug=self.debug)
+        else:
+            build_ext.build_extension(self, ext)
 
 
 include_dirs = ["src/exoplanet_core/lib/include"]
@@ -112,6 +114,18 @@ ext_modules = [
         language="c++",
     ),
 ]
+
+if os.environ.get("EXOPLANET_CORE_CUDA", "no").lower() == "yes":
+    ext_modules.append(
+        DummyExtension(
+            "exoplanet_core.jax.gpu_driver",
+            [
+                "src/exoplanet_core/jax/gpu_driver.cpp",
+                "src/exoplanet_core/jax/cuda_kernels.cc.cu",
+            ],
+            language="c++",
+        )
+    )
 
 # END CMAKE INTERFACE
 
