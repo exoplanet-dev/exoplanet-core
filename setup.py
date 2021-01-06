@@ -80,11 +80,9 @@ def run_cmake(build_temp, debug=False):
 
     if not os.path.exists(build_temp):
         os.makedirs(build_temp)
+    subprocess.check_call(["cmake", HERE] + cmake_args, cwd=build_temp)
     subprocess.check_call(
-        ["cmake", HERE, "-B", "build"] + cmake_args, cwd=build_temp
-    )
-    subprocess.check_call(
-        ["cmake", "--build", "build", "--target", "install"] + build_args,
+        ["cmake", "--build", build_temp, "--target", "install"] + build_args,
         cwd=build_temp,
     )
 
