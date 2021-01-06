@@ -82,7 +82,7 @@ def run_cmake(build_temp, debug=False):
         os.makedirs(build_temp)
     subprocess.check_call(["cmake", HERE] + cmake_args, cwd=build_temp)
     subprocess.check_call(
-        ["cmake", "--build", build_temp, "--target", "install"] + build_args,
+        ["cmake", "--build", ".", "--target", "install"] + build_args,
         cwd=build_temp,
     )
 
