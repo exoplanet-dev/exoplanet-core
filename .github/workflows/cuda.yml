@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Install wget
-        run: apt-get update && apt-get install -y wget
+        run: apt-get update && apt-get install -y wget git-all
 
       - name: Install CMake
         uses: jwlawson/actions-setup-cmake@v1.5
@@ -24,8 +24,12 @@ jobs:
         run: |
           nvcc --version
           cmake --version
+          git --version
 
       - uses: actions/checkout@v2
+        with:
+          submodules: true
+          fetch-depth: 0
 
       - uses: actions/setup-python@v2
         with:

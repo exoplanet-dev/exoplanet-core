@@ -54,6 +54,9 @@ EXTRA_REQUIRE = {
 
 class CMakeBuild(build_ext):
     def build_extension(self, ext):
+        if not (hasattr(ext, "target_name") and hasattr(ext, "source_dir")):
+            return build_ext.build_extension(self, ext)
+
         extdir = os.path.abspath(
             os.path.dirname(self.get_ext_fullpath(ext.name))
         )
@@ -107,6 +110,16 @@ ext_modules = [
         ["src/exoplanet_core/jax/cpu_driver.cpp"],
         include_dirs=include_dirs + ["src/exoplanet_core/jax"],
     ),
+    # CMakeExtension(
+    #     "exoplanet_core.jax.gpu_driver",
+    #     "src",
+    #     "gpu_driver",
+    #     [
+    #         "src/exoplanet_core/jax/gpu_driver.cpp",
+    #         "src/exoplanet_core/jax/cuda_kernels.cc.cu",
+    #     ],
+    #     include_dirs=include_dirs + ["src/exoplanet_core/jax"],
+    # ),
 ]
 
 # END CMAKE INTERFACE
