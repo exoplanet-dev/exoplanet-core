@@ -11,7 +11,12 @@ import sys
 
 from setuptools import find_packages, setup
 
-from pybind11.setup_helpers import Pybind11Extension, build_ext
+sys.path.insert(0, "pybind11")
+
+from pybind11.setup_helpers import (  # noqa isort:skip
+    Pybind11Extension,
+    build_ext,
+)
 
 # PROJECT SPECIFIC
 
