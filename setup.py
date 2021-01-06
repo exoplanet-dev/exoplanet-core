@@ -7,8 +7,8 @@ import codecs
 import os
 import re
 
-from pybind11.setup_helpers import Pybind11Extension, build_ext
-from setuptools import find_packages, setup
+from setuptools import find_packages
+from skbuild import setup
 
 # PROJECT SPECIFIC
 
@@ -24,8 +24,16 @@ CLASSIFIERS = [
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
 ]
-SETUP_REQUIRES = ["setuptools>=40.6.0", "setuptools_scm"]
-INSTALL_REQUIRES = ["pybind11>=2.4", "numpy>=1.13.0"]
+SETUP_REQUIRES = [
+    "setuptools>=42",
+    "wheel",
+    "setuptools_scm[toml]>=3.4",
+    "pybind11[global]>=2.6",
+    "scikit-build",
+    "cmake",
+    "ninja",
+]
+INSTALL_REQUIRES = ["numpy>=1.13.0"]
 EXTRA_REQUIRE = {
     "test": ["pytest", "pytest-cov>=2.6.1"],
     "benchmark": [
@@ -37,21 +45,6 @@ EXTRA_REQUIRE = {
         "exoplanet==0.4.3",
     ],
 }
-
-# Extensions
-include_dirs = ["src/exoplanet_core/lib/include"]
-ext_modules = [
-    Pybind11Extension(
-        "exoplanet_core.driver",
-        ["src/exoplanet_core/driver.cpp"],
-        include_dirs=include_dirs,
-    ),
-    Pybind11Extension(
-        "exoplanet_core.jax.cpu_driver",
-        ["src/exoplanet_core/jax/cpu_driver.cpp"],
-        include_dirs=include_dirs + ["src/exoplanet_core/jax"],
-    ),
-]
 
 # END PROJECT SPECIFIC
 
@@ -75,14 +68,14 @@ def find_meta(meta, meta_file=read(META_PATH)):
 if __name__ == "__main__":
     setup(
         name=NAME,
-        use_scm_version={
-            "write_to": os.path.join(
-                "src",
-                NAME.replace("-", "_"),
-                "{0}_version.py".format(NAME.replace("-", "_")),
-            ),
-            "write_to_template": '__version__ = "{version}"\n',
-        },
+        # use_scm_version={
+        #     "write_to": os.path.join(
+        #         "src",
+        #         NAME.replace("-", "_"),
+        #         "{0}_version.py".format(NAME.replace("-", "_")),
+        #     ),
+        #     "write_to_template": '__version__ = "{version}"\n',
+        # },
         author=find_meta("author"),
         author_email=find_meta("email"),
         maintainer=find_meta("author"),
@@ -100,6 +93,5 @@ if __name__ == "__main__":
         classifiers=CLASSIFIERS,
         setup_requires=SETUP_REQUIRES,
         zip_safe=False,
-        ext_modules=ext_modules,
-        cmdclass={"build_ext": build_ext},
+        cmake_install_dir="src/exoplanet_core",
     )
