@@ -11,7 +11,7 @@ template <typename Scalar>
 __global__ void KeplerKernel(int N, const Scalar* M, const Scalar* ecc, Scalar* cosf,
                              Scalar* sinf) {
   for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < N; idx += blockDim.x * gridDim.x) {
-    kepler::solve_kepler_on_gpu<Scalar>(M[idx], ecc[idx], cosf + idx, sinf + idx);
+    kepler::solve_kepler<Scalar>(M[idx], ecc[idx], cosf + idx, sinf + idx);
   }
 }
 
@@ -52,7 +52,7 @@ void CudaKepler(cudaStream_t stream, void** buffers, const char* opaque, std::si
   const auto& descriptor = *UnpackDescriptor<SizeDescriptor>(opaque, opaque_len);
   int N = descriptor.N;
 
-  const int block_dim = 128;
+  const int block_dim = 256;
   const int grid_dim = std::min<int>(1024, (N + block_dim - 1) / block_dim);
 
   KeplerKernel<<<grid_dim, block_dim, 0, stream>>>(N, M, ecc, cosf, sinf);
@@ -72,7 +72,7 @@ void CudaQuadSolutionVector(cudaStream_t stream, void** buffers, const char* opa
 
   const double eps = std::numeric_limits<double>::epsilon();
 
-  const int block_dim = 128;
+  const int block_dim = 258;
   const int grid_dim = std::min<int>(1024, (N + block_dim - 1) / block_dim);
 
   QuadSolutionVectorKernel<<<grid_dim, block_dim, 0, stream>>>(eps, N, b, r, s, dsdb, dsdr);
