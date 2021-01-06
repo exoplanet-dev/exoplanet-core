@@ -12,4 +12,4 @@ pybind11_add_module(
     gpu_driver
     ${CMAKE_CURRENT_LIST_DIR}/src/exoplanet_core/jax/cuda_kernels.cc.cu
     ${CMAKE_CURRENT_LIST_DIR}/src/exoplanet_core/jax/gpu_driver.cpp)
-install(TARGETS gpu_driver DESTINATION ${CMAKE_CURRENT_LIST_DIR}/src/exoplanet_core/jax)
+install(TARGETS gpu_driver DESTINATION jax)

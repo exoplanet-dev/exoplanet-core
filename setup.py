@@ -47,7 +47,7 @@ EXTRA_REQUIRE = {
 # CMAKE INTERFACE
 
 
-def run_cmake(build_temp, debug=False):
+def run_cmake(build_temp, install_dir, debug=False):
     import distutils.sysconfig
 
     # From PyTorch
@@ -70,6 +70,7 @@ def run_cmake(build_temp, debug=False):
     cmake_python_include_dir = distutils.sysconfig.get_python_inc()
 
     cmake_args = [
+        "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={}".format(install_dir),
         "-DPython_EXECUTABLE={}".format(sys.executable),
         "-DPython_LIBRARIES={}".format(cmake_python_library),
         "-DPython_INCLUDE_DIRS={}".format(cmake_python_include_dir),
@@ -94,7 +95,10 @@ class DummyExtension(Pybind11Extension):
 class BuildExt(build_ext):
     def build_extension(self, ext):
         if isinstance(ext, DummyExtension):
-            run_cmake(self.build_temp, debug=self.debug)
+            extdir = os.path.abspath(
+                os.path.dirname(self.get_ext_fullpath(ext.name))
+            )
+            run_cmake(self.build_temp, extdir, debug=self.debug)
         else:
             build_ext.build_extension(self, ext)
 
