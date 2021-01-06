@@ -16,6 +16,8 @@ jobs:
     steps:
       - name: Install wget
         run: apt-get update && apt-get install -y wget git-all
+        env:
+          DEBIAN_FRONTEND: "noninteractive"
 
       - name: Install CMake
         uses: jwlawson/actions-setup-cmake@v1.5
