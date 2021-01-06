@@ -131,6 +131,7 @@ ext_modules = [
         "driver",
         ["src/exoplanet_core/driver.cpp"],
         include_dirs=include_dirs,
+        language="c++",
     ),
     CMakeExtension(
         "exoplanet_core.jax.cpu_driver",
@@ -138,6 +139,7 @@ ext_modules = [
         "cpu_driver",
         ["src/exoplanet_core/jax/cpu_driver.cpp"],
         include_dirs=include_dirs + ["src/exoplanet_core/jax"],
+        language="c++",
     ),
     # CMakeExtension(
     #     "exoplanet_core.jax.gpu_driver",
