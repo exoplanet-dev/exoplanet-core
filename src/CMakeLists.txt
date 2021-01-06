@@ -3,6 +3,8 @@ project(exoplanet_core LANGUAGES CXX)
 
 find_package(Python COMPONENTS Interpreter Development REQUIRED)
 
+add_subdirectory(pybind11)
+
 # execute_process(
 #   COMMAND
 #     "${Python_EXECUTABLE}" -c
@@ -10,7 +12,7 @@ find_package(Python COMPONENTS Interpreter Development REQUIRED)
 #   OUTPUT_VARIABLE _tmp_dir
 #   OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ECHO STDOUT)
 # list(APPEND CMAKE_PREFIX_PATH "${_tmp_dir}")
-find_package(pybind11 CONFIG REQUIRED)
+# find_package(pybind11 CONFIG REQUIRED)
 
 add_subdirectory(exoplanet_core)
 
