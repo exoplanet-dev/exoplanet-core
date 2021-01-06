@@ -6,13 +6,15 @@
 import codecs
 import os
 import re
+import subprocess
+import sys
 
-from setuptools import find_packages
-from skbuild import setup
+from pybind11.setup_helpers import Pybind11Extension, build_ext
+from setuptools import find_packages, setup
 
 # PROJECT SPECIFIC
 
-NAME = "exoplanet-core"
+NAME = "exoplanet_core"
 PACKAGES = find_packages(where="src")
 META_PATH = os.path.join("src", "exoplanet_core", "__init__.py")
 CLASSIFIERS = [
@@ -28,10 +30,8 @@ SETUP_REQUIRES = [
     "setuptools>=42",
     "wheel",
     "setuptools_scm[toml]>=3.4",
-    "pybind11[global]>=2.6",
-    "scikit-build",
+    "pybind11>=2.6",
     "cmake",
-    "ninja",
 ]
 INSTALL_REQUIRES = ["numpy>=1.13.0"]
 EXTRA_REQUIRE = {
@@ -46,7 +46,70 @@ EXTRA_REQUIRE = {
     ],
 }
 
+
 # END PROJECT SPECIFIC
+
+# CMAKE INTERFACE
+
+
+class CMakeBuild(build_ext):
+    def build_extension(self, ext):
+        extdir = os.path.abspath(
+            os.path.dirname(self.get_ext_fullpath(ext.name))
+        )
+
+        # required for auto-detection of auxiliary "native" libs
+        if not extdir.endswith(os.path.sep):
+            extdir += os.path.sep
+
+        cmake_args = [
+            "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={}".format(extdir),
+            "-DPython_EXECUTABLE={}".format(sys.executable),
+            "-DVERSION_INFO={}".format(self.distribution.get_version()),
+            "-DCMAKE_BUILD_TYPE={}".format(
+                "Debug" if self.debug else "Release"
+            ),
+        ]
+        build_args = []
+
+        if not os.path.exists(self.build_temp):
+            os.makedirs(self.build_temp)
+        subprocess.check_call(
+            ["cmake", ext.source_dir] + cmake_args, cwd=self.build_temp
+        )
+        subprocess.check_call(
+            ["cmake", "--build", ".", "--target", ext.target_name]
+            + build_args,
+            cwd=self.build_temp,
+        )
+
+
+class CMakeExtension(Pybind11Extension):
+    def __init__(self, name, source_dir, target_name, *args, **kwargs):
+        Pybind11Extension.__init__(self, name, *args, **kwargs)
+        self.source_dir = os.path.abspath(source_dir)
+        self.target_name = target_name
+
+
+include_dirs = ["src/exoplanet_core/lib/include"]
+ext_modules = [
+    CMakeExtension(
+        "exoplanet_core.driver",
+        "src",
+        "driver",
+        ["src/exoplanet_core/driver.cpp"],
+        include_dirs=include_dirs,
+    ),
+    CMakeExtension(
+        "exoplanet_core.jax.cpu_driver",
+        "src",
+        "cpu_driver",
+        ["src/exoplanet_core/jax/cpu_driver.cpp"],
+        include_dirs=include_dirs + ["src/exoplanet_core/jax"],
+    ),
+]
+
+# END CMAKE INTERFACE
 
 HERE = os.path.dirname(os.path.realpath(__file__))
 
@@ -68,14 +131,6 @@ def find_meta(meta, meta_file=read(META_PATH)):
 if __name__ == "__main__":
     setup(
         name=NAME,
-        # use_scm_version={
-        #     "write_to": os.path.join(
-        #         "src",
-        #         NAME.replace("-", "_"),
-        #         "{0}_version.py".format(NAME.replace("-", "_")),
-        #     ),
-        #     "write_to_template": '__version__ = "{version}"\n',
-        # },
         author=find_meta("author"),
         author_email=find_meta("email"),
         maintainer=find_meta("author"),
@@ -93,5 +148,6 @@ if __name__ == "__main__":
         classifiers=CLASSIFIERS,
         setup_requires=SETUP_REQUIRES,
         zip_safe=False,
-        cmake_install_dir="src/exoplanet_core",
+        ext_modules=ext_modules,
+        cmdclass={"build_ext": CMakeBuild},
     )
