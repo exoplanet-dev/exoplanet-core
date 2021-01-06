@@ -5,8 +5,12 @@
 
 import codecs
 import os
+import platform
 import re
+import subprocess
+import sys
 
+import pybind11
 from pybind11.setup_helpers import Pybind11Extension, build_ext
 from setuptools import find_packages, setup
 
@@ -41,6 +45,58 @@ EXTRA_REQUIRE = {
 # END PROJECT SPECIFIC
 
 # CMAKE INTERFACE
+
+
+def run_cmake(build_temp, debug=False):
+    import distutils.sysconfig
+
+    # From PyTorch
+    if platform.system() == "Windows":
+        cmake_python_library = "{}/libs/python{}.lib".format(
+            distutils.sysconfig.get_config_var("prefix"),
+            distutils.sysconfig.get_config_var("VERSION"),
+        )
+        # Fix virtualenv builds
+        if not os.path.exists(cmake_python_library):
+            cmake_python_library = "{}/libs/python{}.lib".format(
+                sys.base_prefix,
+                distutils.sysconfig.get_config_var("VERSION"),
+            )
+    else:
+        cmake_python_library = "{}/{}".format(
+            distutils.sysconfig.get_config_var("LIBDIR"),
+            distutils.sysconfig.get_config_var("INSTSONAME"),
+        )
+    cmake_python_include_dir = distutils.sysconfig.get_python_inc()
+
+    cmake_args = [
+        "-DPython_EXECUTABLE={}".format(sys.executable),
+        "-DPython_LIBRARIES={}".format(cmake_python_library),
+        "-DPython_INCLUDE_DIRS={}".format(cmake_python_include_dir),
+        "-DCMAKE_BUILD_TYPE={}".format("Debug" if debug else "Release"),
+        "-DCMAKE_PREFIX_PATH={}".format(pybind11.get_cmake_dir()),
+    ]
+    build_args = []
+
+    if not os.path.exists(build_temp):
+        os.makedirs(build_temp)
+    subprocess.check_call(
+        ["cmake", HERE, "-B", "build"] + cmake_args, cwd=build_temp
+    )
+    subprocess.check_call(
+        ["cmake", "--build", "build", "--target", "install"] + build_args,
+        cwd=build_temp,
+    )
+
+
+class BuildExt(build_ext):
+    def build_extensions(self):
+        # Start by building the GPU extension if requested
+        if os.environ.get("EXOPLANET_CORE_CUDA", "no").lower() == "yes":
+            run_cmake(self.build_temp, debug=self.debug)
+
+        # Build the other extensions
+        build_ext.build_extensions(self)
 
 
 include_dirs = ["src/exoplanet_core/lib/include"]
@@ -98,5 +154,5 @@ if __name__ == "__main__":
         classifiers=CLASSIFIERS,
         zip_safe=False,
         ext_modules=ext_modules,
-        cmdclass={"build_ext": build_ext},
+        cmdclass={"build_ext": BuildExt},
     )

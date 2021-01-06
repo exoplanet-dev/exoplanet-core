@@ -43,5 +43,6 @@ jobs:
 
       - name: Compile the extension
         run: |
-          cmake --build build
+          cmake --build build --target install
           ls build
+          ls src/exoplanet_core/jax
