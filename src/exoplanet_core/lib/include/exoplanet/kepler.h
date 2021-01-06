@@ -275,8 +275,8 @@ EXOPLANET_INLINE_OR_DEVICE Scalar refine_estimate(const Scalar &M, const Scalar 
 }
 
 template <typename Scalar>
-EXOPLANET_INLINE_OR_DEVICE Scalar solve_kepler_on_gpu(const Scalar &M_in, const Scalar &ecc,
-                                                      Scalar *cosf, Scalar *sinf) {
+EXOPLANET_INLINE_OR_DEVICE void solve_kepler_on_gpu(const Scalar &M_in, const Scalar &ecc,
+                                                    Scalar *cosf, Scalar *sinf) {
   Scalar M = M_in;
   const Scalar ome = 1.0 - ecc;
   bool high = M > M_PI;
