@@ -4,7 +4,6 @@
 # https://hynek.me/articles/sharing-your-labor-of-love-pypi-quick-and-dirty/
 
 import codecs
-import distutils.sysconfig
 import os
 import platform
 import re
@@ -13,12 +12,7 @@ import sys
 
 from setuptools import find_packages, setup
 
-sys.path.insert(0, "pybind11")
-
-from pybind11.setup_helpers import (  # noqa isort:skip
-    Pybind11Extension,
-    build_ext,
-)
+from pybind11.setup_helpers import Pybind11Extension, build_ext
 
 # PROJECT SPECIFIC
 
@@ -64,6 +58,8 @@ class CMakeBuild(build_ext):
     def build_extension(self, ext):
         if not (hasattr(ext, "target_name") and hasattr(ext, "source_dir")):
             return build_ext.build_extension(self, ext)
+
+        import distutils.sysconfig
 
         extdir = os.path.abspath(
             os.path.dirname(self.get_ext_fullpath(ext.name))
@@ -125,18 +121,14 @@ class CMakeExtension(Pybind11Extension):
 
 include_dirs = ["src/exoplanet_core/lib/include"]
 ext_modules = [
-    CMakeExtension(
+    Pybind11Extension(
         "exoplanet_core.driver",
-        "src",
-        "driver",
         ["src/exoplanet_core/driver.cpp"],
         include_dirs=include_dirs,
         language="c++",
     ),
-    CMakeExtension(
+    Pybind11Extension(
         "exoplanet_core.jax.cpu_driver",
-        "src",
-        "cpu_driver",
         ["src/exoplanet_core/jax/cpu_driver.cpp"],
         include_dirs=include_dirs + ["src/exoplanet_core/jax"],
         language="c++",
