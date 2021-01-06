@@ -208,13 +208,11 @@ EXOPLANET_INLINE_OR_DEVICE void calcEA(const Scalar &M, const Scalar &ecc, Scala
 }
 
 template <typename Scalar>
-EXOPLANET_INLINE_OR_DEVICE void solve_kepler(const Scalar &M, const Scalar &ecc, Scalar *cosf,
-                                             Scalar *sinf) {
-  calcEA(M, ecc, sinf, cosf);
-
+EXOPLANET_INLINE_OR_DEVICE void to_f(const Scalar &ecc, const Scalar &ome, Scalar *cosf,
+                                     Scalar *sinf) {
   Scalar denom = 1 + (*cosf);
   if (denom > 1.0e-10) {
-    Scalar tanf2 = sqrt((1 + ecc) / (1 - ecc)) * (*sinf) / denom;  // tan(0.5*f)
+    Scalar tanf2 = sqrt((1 + ecc) / ome) * (*sinf) / denom;  // tan(0.5*f)
     Scalar tanf2_2 = tanf2 * tanf2;
 
     // Then we compute sin(f) and cos(f) using:
@@ -228,6 +226,66 @@ EXOPLANET_INLINE_OR_DEVICE void solve_kepler(const Scalar &M, const Scalar &ecc,
     *sinf = 0;
     *cosf = -1;
   }
+}
+
+template <typename Scalar>
+EXOPLANET_INLINE_OR_DEVICE void solve_kepler(const Scalar &M, const Scalar &ecc, Scalar *cosf,
+                                             Scalar *sinf) {
+  calcEA(M, ecc, sinf, cosf);
+  to_f(ecc, 1 - ecc, cosf, sinf);
+}
+
+template <typename Scalar>
+EXOPLANET_INLINE_OR_DEVICE Scalar get_markley_starter(const Scalar &M, const Scalar &ecc,
+                                                      const Scalar &ome) {
+  // M must be in the range [0, pi)
+  const Scalar FACTOR1 = 3 * M_PI / (M_PI - 6 / M_PI);
+  const Scalar FACTOR2 = 1.6 / (M_PI - 6 / M_PI);
+  const Scalar two_thirds = Scalar(2.0 / 3);
+
+  Scalar M2 = M * M;
+  Scalar alpha = FACTOR1 + FACTOR2 * (M_PI - M) / (1 + ecc);
+  Scalar d = 3 * ome + alpha * ecc;
+  Scalar alphad = alpha * d;
+  Scalar r = (3 * alphad * (d - ome) + M2) * M;
+  Scalar q = 2 * alphad * ome - M2;
+  Scalar q2 = q * q;
+  Scalar w = pow(fabs(r) + sqrt(q2 * q + r * r), two_thirds);
+  return (2 * r * w / (w * w + w * q + q2) + M) / d;
+}
+
+template <typename Scalar>
+EXOPLANET_INLINE_OR_DEVICE Scalar refine_estimate(const Scalar &M, const Scalar &ecc,
+                                                  const Scalar &ome, const Scalar &E) {
+  Scalar sE, cE;
+  sincos(E, &sE, &cE);
+  sE = E - sE;
+  cE = 1 - cE;
+
+  Scalar f_0 = ecc * sE + E * ome - M;
+  Scalar f_1 = ecc * cE + ome;
+  Scalar f_2 = ecc * (E - sE);
+  Scalar f_3 = 1 - f_1;
+  Scalar d_3 = -f_0 / (f_1 - 0.5 * f_0 * f_2 / f_1);
+  Scalar d_4 = -f_0 / (f_1 + 0.5 * d_3 * f_2 + (d_3 * d_3) * f_3 / 6);
+  Scalar d_42 = d_4 * d_4;
+  Scalar dE = -f_0 / (f_1 + 0.5 * d_4 * f_2 + d_4 * d_4 * f_3 / 6 - d_42 * d_4 * f_2 / 24);
+
+  return E + dE;
+}
+
+template <typename Scalar>
+EXOPLANET_INLINE_OR_DEVICE Scalar solve_kepler_on_gpu(const Scalar &M, const Scalar &ecc,
+                                                      Scalar *cosf, Scalar *sinf) {
+  const Scalar ome = 1.0 - ecc;
+  bool high = M > M_PI;
+  if (high) M = twopi - M;
+  Scalar E = get_markley_starter(M, ecc, ome);
+  E = refine_estimate(M, ecc, ome, E);
+  if (high) E = twopi - E;
+
+  sincos(E, sinf, cosf);
+  to_f(ecc, ome, cosf, sinf);
 }
 
 }  // namespace kepler

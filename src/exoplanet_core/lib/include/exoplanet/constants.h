@@ -23,6 +23,12 @@ template <class T>
 EXOPLANET_INLINE_OR_DEVICE void swap(T& a, T& b) {
   std::swap(a, b);
 }
+
+template <class T>
+inline void sincos(const T& x, T* sx, T* cx) {
+  *sx = sin(x);
+  *cx = cos(x);
+}
 #endif
 
 #ifndef M_PI

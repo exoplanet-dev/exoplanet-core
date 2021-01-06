@@ -11,7 +11,7 @@ template <typename Scalar>
 __global__ void KeplerKernel(int N, const Scalar* M, const Scalar* ecc, Scalar* cosf,
                              Scalar* sinf) {
   for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < N; idx += blockDim.x * gridDim.x) {
-    kepler::solve_kepler<Scalar>(M[idx], ecc[idx], cosf + idx, sinf + idx);
+    kepler::solve_kepler_on_gpu<Scalar>(M[idx], ecc[idx], cosf + idx, sinf + idx);
   }
 }
 
@@ -28,6 +28,7 @@ __global__ void QuadSolutionVectorKernel(Scalar eps, int N, const Scalar* b, con
     dsdb[offset + 2] *= sgn;
   }
 }
+
 }  // namespace
 
 void ThrowIfError(cudaError_t error) {
