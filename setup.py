@@ -30,7 +30,7 @@ SETUP_REQUIRES = [
     "setuptools>=42",
     "wheel",
     "setuptools_scm[toml]>=3.4",
-    "pybind11>=2.6",
+    "pybind11[global]>=2.6",
     "cmake",
 ]
 INSTALL_REQUIRES = ["numpy>=1.13.0"]
