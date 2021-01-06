@@ -9,8 +9,9 @@ import re
 import subprocess
 import sys
 
-from pybind11.setup_helpers import Pybind11Extension, build_ext
 from setuptools import find_packages, setup
+
+from pybind11.setup_helpers import Pybind11Extension, build_ext
 
 # PROJECT SPECIFIC
 
@@ -67,6 +68,7 @@ class CMakeBuild(build_ext):
 
         cmake_args = [
             "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={}".format(extdir),
+            "-DPYTHON_EXECUTABLE={}".format(sys.executable),
             "-DPython_EXECUTABLE={}".format(sys.executable),
             "-DVERSION_INFO={}".format(self.distribution.get_version()),
             "-DCMAKE_BUILD_TYPE={}".format(
