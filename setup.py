@@ -5,14 +5,10 @@
 
 import codecs
 import os
-import platform
 import re
-import subprocess
-import sys
-
-from setuptools import find_packages, setup
 
 from pybind11.setup_helpers import Pybind11Extension, build_ext
+from setuptools import find_packages, setup
 
 # PROJECT SPECIFIC
 
@@ -32,8 +28,7 @@ SETUP_REQUIRES = [
     "setuptools>=42",
     "wheel",
     "setuptools_scm[toml]>=3.4",
-    "pybind11[global]>=2.6",
-    "cmake",
+    "pybind11>=2.6",
 ]
 INSTALL_REQUIRES = ["numpy>=1.13.0"]
 EXTRA_REQUIRE = {
@@ -54,71 +49,6 @@ EXTRA_REQUIRE = {
 # CMAKE INTERFACE
 
 
-class CMakeBuild(build_ext):
-    def build_extension(self, ext):
-        if not (hasattr(ext, "target_name") and hasattr(ext, "source_dir")):
-            return build_ext.build_extension(self, ext)
-
-        import distutils.sysconfig
-
-        extdir = os.path.abspath(
-            os.path.dirname(self.get_ext_fullpath(ext.name))
-        )
-
-        # required for auto-detection of auxiliary "native" libs
-        if not extdir.endswith(os.path.sep):
-            extdir += os.path.sep
-
-        # From PyTorch
-        if platform.system() == "Windows":
-            cmake_python_library = "{}/libs/python{}.lib".format(
-                distutils.sysconfig.get_config_var("prefix"),
-                distutils.sysconfig.get_config_var("VERSION"),
-            )
-            # Fix virtualenv builds
-            if not os.path.exists(cmake_python_library):
-                cmake_python_library = "{}/libs/python{}.lib".format(
-                    sys.base_prefix,
-                    distutils.sysconfig.get_config_var("VERSION"),
-                )
-        else:
-            cmake_python_library = "{}/{}".format(
-                distutils.sysconfig.get_config_var("LIBDIR"),
-                distutils.sysconfig.get_config_var("INSTSONAME"),
-            )
-        cmake_python_include_dir = distutils.sysconfig.get_python_inc()
-
-        cmake_args = [
-            "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={}".format(extdir),
-            "-DPython_EXECUTABLE={}".format(sys.executable),
-            "-DPython_LIBRARIES={}".format(cmake_python_library),
-            "-DPython_INCLUDE_DIRS={}".format(cmake_python_include_dir),
-            "-DVERSION_INFO={}".format(self.distribution.get_version()),
-            "-DCMAKE_BUILD_TYPE={}".format(
-                "Debug" if self.debug else "Release"
-            ),
-        ]
-        build_args = []
-
-        if not os.path.exists(self.build_temp):
-            os.makedirs(self.build_temp)
-        subprocess.check_call(
-            ["cmake", ext.source_dir] + cmake_args, cwd=self.build_temp
-        )
-        subprocess.check_call(
-            ["cmake", "--build", ".", "--target", ext.target_name]
-            + build_args,
-            cwd=self.build_temp,
-        )
-
-
-class CMakeExtension(Pybind11Extension):
-    def __init__(self, name, source_dir, target_name, *args, **kwargs):
-        Pybind11Extension.__init__(self, name, *args, **kwargs)
-        self.source_dir = os.path.abspath(source_dir)
-        self.target_name = target_name
-
-
 include_dirs = ["src/exoplanet_core/lib/include"]
 ext_modules = [
     Pybind11Extension(
@@ -133,16 +63,6 @@ ext_modules = [
         include_dirs=include_dirs + ["src/exoplanet_core/jax"],
         language="c++",
     ),
-    # CMakeExtension(
-    #     "exoplanet_core.jax.gpu_driver",
-    #     "src",
-    #     "gpu_driver",
-    #     [
-    #         "src/exoplanet_core/jax/gpu_driver.cpp",
-    #         "src/exoplanet_core/jax/cuda_kernels.cc.cu",
-    #     ],
-    #     include_dirs=include_dirs + ["src/exoplanet_core/jax"],
-    # ),
 ]
 
 # END CMAKE INTERFACE
@@ -185,5 +105,5 @@ if __name__ == "__main__":
         setup_requires=SETUP_REQUIRES,
         zip_safe=False,
         ext_modules=ext_modules,
-        cmdclass={"build_ext": CMakeBuild},
+        cmdclass={"build_ext": build_ext},
     )

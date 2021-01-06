@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Install wget
-        run: apt-get update && apt-get install -y wget git-all
+        run: apt-get update && apt-get install -y wget
         env:
           DEBIAN_FRONTEND: "noninteractive"
 
@@ -26,12 +26,8 @@ jobs:
         run: |
           nvcc --version
           cmake --version
-          git --version
 
       - uses: actions/checkout@v2
-        with:
-          submodules: true
-          fetch-depth: 0
 
       - uses: actions/setup-python@v2
         with:
