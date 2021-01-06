@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1609961036495,
+  "lastUpdate": 1609961083513,
   "repoUrl": "https://github.com/exoplanet-dev/exoplanet-core",
   "entries": {
     "Op performance": [
@@ -11033,6 +11033,215 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.00004464734229802701",
             "extra": "mean: 2.0791585448877825 msec\nrounds: 479"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "exoplanet-dev",
+            "username": "exoplanet-dev"
+          },
+          "committer": {
+            "name": "exoplanet-dev",
+            "username": "exoplanet-dev"
+          },
+          "id": "cdfe82984730669829d2b9c533f9dff57fa76800",
+          "message": "Adding GPU ops",
+          "timestamp": "2021-01-05T15:02:44Z",
+          "url": "https://github.com/exoplanet-dev/exoplanet-core/pull/3/commits/cdfe82984730669829d2b9c533f9dff57fa76800"
+        },
+        "date": 1609961082980,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/benchmark.py::test_numpy_kepler_benchmark[0.0]",
+            "value": 869.0073641318805,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000033405442167224936",
+            "extra": "mean: 1.1507382345361115 msec\nrounds: 776"
+          },
+          {
+            "name": "tests/benchmark.py::test_kepler_dot_py_kepler_benchmark[0.0]",
+            "value": 447.0436064763585,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00000823191334752524",
+            "extra": "mean: 2.236918245810734 msec\nrounds: 358"
+          },
+          {
+            "name": "tests/benchmark.py::test_radvel_kepler_benchmark[0.0]",
+            "value": 1059.9540871617987,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000006763515544909383",
+            "extra": "mean: 943.4370904476291 usec\nrounds: 984"
+          },
+          {
+            "name": "tests/benchmark.py::test_numpy_kepler_benchmark[0.25]",
+            "value": 866.8342987271386,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000004505523167500234",
+            "extra": "mean: 1.1536230182266694 msec\nrounds: 823"
+          },
+          {
+            "name": "tests/benchmark.py::test_kepler_dot_py_kepler_benchmark[0.25]",
+            "value": 442.2260560413428,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000008510347571933111",
+            "extra": "mean: 2.2612869285714634 msec\nrounds: 406"
+          },
+          {
+            "name": "tests/benchmark.py::test_radvel_kepler_benchmark[0.25]",
+            "value": 369.1512022250256,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000029593709379912585",
+            "extra": "mean: 2.7089170886417007 msec\nrounds: 361"
+          },
+          {
+            "name": "tests/benchmark.py::test_numpy_kepler_benchmark[0.5]",
+            "value": 868.1418019609873,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000004825135542170044",
+            "extra": "mean: 1.1518855534213042 msec\nrounds: 833"
+          },
+          {
+            "name": "tests/benchmark.py::test_kepler_dot_py_kepler_benchmark[0.5]",
+            "value": 438.5981155085761,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00002925433350130068",
+            "extra": "mean: 2.279991556371488 msec\nrounds: 408"
+          },
+          {
+            "name": "tests/benchmark.py::test_radvel_kepler_benchmark[0.5]",
+            "value": 367.81636747199315,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00001656419735215973",
+            "extra": "mean: 2.7187479634824667 msec\nrounds: 356"
+          },
+          {
+            "name": "tests/benchmark.py::test_numpy_kepler_benchmark[0.75]",
+            "value": 868.0991669507189,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000058359887046380015",
+            "extra": "mean: 1.1519421260506393 msec\nrounds: 833"
+          },
+          {
+            "name": "tests/benchmark.py::test_kepler_dot_py_kepler_benchmark[0.75]",
+            "value": 435.7084565119959,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000010433048263907748",
+            "extra": "mean: 2.2951126723712507 msec\nrounds: 409"
+          },
+          {
+            "name": "tests/benchmark.py::test_radvel_kepler_benchmark[0.75]",
+            "value": 324.1272383300803,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00001688407299146616",
+            "extra": "mean: 3.0852081582283857 msec\nrounds: 316"
+          },
+          {
+            "name": "tests/benchmark.py::test_numpy_kepler_benchmark[0.95]",
+            "value": 854.3095580654649,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000005069414876325657",
+            "extra": "mean: 1.1705358913043684 msec\nrounds: 828"
+          },
+          {
+            "name": "tests/benchmark.py::test_kepler_dot_py_kepler_benchmark[0.95]",
+            "value": 435.9053272053058,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00000967330024387095",
+            "extra": "mean: 2.2940761160485037 msec\nrounds: 405"
+          },
+          {
+            "name": "tests/benchmark.py::test_radvel_kepler_benchmark[0.95]",
+            "value": 302.5909325083541,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000015824972747856518",
+            "extra": "mean: 3.304791692567957 msec\nrounds: 296"
+          },
+          {
+            "name": "tests/benchmark.py::test_quad_limbdark_benchmark[0.01]",
+            "value": 1270.5807071563906,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00013450749313283542",
+            "extra": "mean: 787.0417001986747 usec\nrounds: 1004"
+          },
+          {
+            "name": "tests/benchmark.py::test_quad_limbdark_exoplanet_benchmark[0.01]",
+            "value": 1154.654407019243,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00014363112037034539",
+            "extra": "mean: 866.0600036867431 usec\nrounds: 1085"
+          },
+          {
+            "name": "tests/benchmark.py::test_quad_limbdark_starry_benchmark[0.01]",
+            "value": 676.3751789092935,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000022936200092058027",
+            "extra": "mean: 1.4784693927009211 msec\nrounds: 685"
+          },
+          {
+            "name": "tests/benchmark.py::test_quad_limbdark_batman_benchmark[0.01]",
+            "value": 763.4807087166607,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000182394419405648",
+            "extra": "mean: 1.3097907891882508 msec\nrounds: 740"
+          },
+          {
+            "name": "tests/benchmark.py::test_quad_limbdark_benchmark[0.1]",
+            "value": 1087.8691812938966,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00003608519457755102",
+            "extra": "mean: 919.2281730148967 usec\nrounds: 919"
+          },
+          {
+            "name": "tests/benchmark.py::test_quad_limbdark_exoplanet_benchmark[0.1]",
+            "value": 975.9963088483477,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000012088745804588577",
+            "extra": "mean: 1.0245940388647332 msec\nrounds: 952"
+          },
+          {
+            "name": "tests/benchmark.py::test_quad_limbdark_starry_benchmark[0.1]",
+            "value": 603.9891011313583,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000031491730364651225",
+            "extra": "mean: 1.655659014586284 msec\nrounds: 617"
+          },
+          {
+            "name": "tests/benchmark.py::test_quad_limbdark_batman_benchmark[0.1]",
+            "value": 636.306009039391,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000013314149295872221",
+            "extra": "mean: 1.5715708885252633 msec\nrounds: 610"
+          },
+          {
+            "name": "tests/benchmark.py::test_quad_limbdark_benchmark[0.9]",
+            "value": 797.606926293758,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000362108882466559",
+            "extra": "mean: 1.2537503963847236 msec\nrounds: 719"
+          },
+          {
+            "name": "tests/benchmark.py::test_quad_limbdark_exoplanet_benchmark[0.9]",
+            "value": 720.2347265260347,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000021201697999431104",
+            "extra": "mean: 1.3884362460879653 msec\nrounds: 703"
+          },
+          {
+            "name": "tests/benchmark.py::test_quad_limbdark_starry_benchmark[0.9]",
+            "value": 495.0686899510533,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000019906847886734387",
+            "extra": "mean: 2.0199217205573405 msec\nrounds: 501"
+          },
+          {
+            "name": "tests/benchmark.py::test_quad_limbdark_batman_benchmark[0.9]",
+            "value": 576.1988992335358,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00001345449793888981",
+            "extra": "mean: 1.73551181949533 msec\nrounds: 554"
           }
         ]
       }
