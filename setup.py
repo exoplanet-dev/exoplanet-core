@@ -4,7 +4,9 @@
 # https://hynek.me/articles/sharing-your-labor-of-love-pypi-quick-and-dirty/
 
 import codecs
+import distutils.sysconfig
 import os
+import platform
 import re
 import subprocess
 import sys
@@ -71,10 +73,30 @@ class CMakeBuild(build_ext):
         if not extdir.endswith(os.path.sep):
             extdir += os.path.sep
 
+        # From PyTorch
+        if platform.system() == "Windows":
+            cmake_python_library = "{}/libs/python{}.lib".format(
+                distutils.sysconfig.get_config_var("prefix"),
+                distutils.sysconfig.get_config_var("VERSION"),
+            )
+            # Fix virtualenv builds
+            if not os.path.exists(cmake_python_library):
+                cmake_python_library = "{}/libs/python{}.lib".format(
+                    sys.base_prefix,
+                    distutils.sysconfig.get_config_var("VERSION"),
+                )
+        else:
+            cmake_python_library = "{}/{}".format(
+                distutils.sysconfig.get_config_var("LIBDIR"),
+                distutils.sysconfig.get_config_var("INSTSONAME"),
+            )
+        cmake_python_include_dir = distutils.sysconfig.get_python_inc()
+
         cmake_args = [
             "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={}".format(extdir),
-            "-DPYTHON_EXECUTABLE={}".format(sys.executable),
             "-DPython_EXECUTABLE={}".format(sys.executable),
+            "-DPython_LIBRARIES={}".format(cmake_python_library),
+            "-DPython_INCLUDE_DIRS={}".format(cmake_python_include_dir),
             "-DVERSION_INFO={}".format(self.distribution.get_version()),
             "-DCMAKE_BUILD_TYPE={}".format(
                 "Debug" if self.debug else "Release"
