@@ -211,21 +211,21 @@ template <typename Scalar>
 EXOPLANET_INLINE_OR_DEVICE void to_f(const Scalar &ecc, const Scalar &ome, Scalar *cosf,
                                      Scalar *sinf) {
   Scalar denom = 1 + (*cosf);
-  if (denom > 1.0e-10) {
-    Scalar tanf2 = sqrt((1 + ecc) / ome) * (*sinf) / denom;  // tan(0.5*f)
-    Scalar tanf2_2 = tanf2 * tanf2;
+  // if (denom > 1.0e-10) {
+  Scalar tanf2 = sqrt((1 + ecc) / ome) * (*sinf) / denom;  // tan(0.5*f)
+  Scalar tanf2_2 = tanf2 * tanf2;
 
-    // Then we compute sin(f) and cos(f) using:
-    // sin(f) = 2*tan(0.5*f)/(1 + tan(0.5*f)^2), and
-    // cos(f) = (1 - tan(0.5*f)^2)/(1 + tan(0.5*f)^2)
-    denom = 1 / (1 + tanf2_2);
-    *sinf = 2 * tanf2 * denom;
-    *cosf = (1 - tanf2_2) * denom;
-  } else {
-    // If cos(E) = -1, E = pi and tan(0.5*E) -> inf and f = E = pi
-    *sinf = 0;
-    *cosf = -1;
-  }
+  // Then we compute sin(f) and cos(f) using:
+  // sin(f) = 2*tan(0.5*f)/(1 + tan(0.5*f)^2), and
+  // cos(f) = (1 - tan(0.5*f)^2)/(1 + tan(0.5*f)^2)
+  denom = 1 / (1 + tanf2_2);
+  *sinf = 2 * tanf2 * denom;
+  *cosf = (1 - tanf2_2) * denom;
+  // } else {
+  //   // If cos(E) = -1, E = pi and tan(0.5*E) -> inf and f = E = pi
+  //   *sinf = 0;
+  //   *cosf = -1;
+  // }
 }
 
 template <typename Scalar>
