@@ -2,6 +2,7 @@ FROM nvidia/cuda:10.2-devel-ubuntu18.04
 
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y \
+      git \
       python3-pip \
       && \
     apt-get autoremove --purge -y && \
