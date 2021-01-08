@@ -10,4 +10,5 @@ RUN apt-get update && \
     rm -rf /var/cache/apt/* /var/lib/apt/lists/*
 
 RUN python3 -m pip install -U pip && \
+    python3 -m pip install pytest pytest-cov && \
     python3 -m pip install -U jax jaxlib==0.1.57+cuda102 -f https://storage.googleapis.com/jax-releases/jax_releases.html

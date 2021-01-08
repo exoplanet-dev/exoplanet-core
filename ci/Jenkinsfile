@@ -17,7 +17,7 @@ pipeline {
         HOME = "$WORKSPACE/build"
       }
       steps {
-        sh 'EXOPLANET_CORE_CUDA=yes python3 -m pip install -e .[test]'
+        sh 'EXOPLANET_CORE_CUDA=yes python3 -m pip install --user -e .[test]'
         sh 'python3 -m pytest -v tests/jax'
       }
     }
