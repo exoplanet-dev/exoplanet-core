@@ -52,7 +52,7 @@ void CudaKepler(cudaStream_t stream, void** buffers, const char* opaque, std::si
   const auto& descriptor = *UnpackDescriptor<SizeDescriptor>(opaque, opaque_len);
   int N = descriptor.N;
 
-  const int block_dim = 256;
+  const int block_dim = 128;
   const int grid_dim = std::min<int>(1024, (N + block_dim - 1) / block_dim);
 
   KeplerKernel<<<grid_dim, block_dim, 0, stream>>>(N, M, ecc, cosf, sinf);
@@ -72,7 +72,7 @@ void CudaQuadSolutionVector(cudaStream_t stream, void** buffers, const char* opa
 
   const double eps = std::numeric_limits<double>::epsilon();
 
-  const int block_dim = 258;
+  const int block_dim = 128;
   const int grid_dim = std::min<int>(1024, (N + block_dim - 1) / block_dim);
 
   QuadSolutionVectorKernel<<<grid_dim, block_dim, 0, stream>>>(eps, N, b, r, s, dsdb, dsdr);
