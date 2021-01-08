@@ -49,6 +49,7 @@ EXTRA_REQUIRE = {
 
 def run_cmake(build_temp, install_dir, debug=False):
     import distutils.sysconfig
+    from distutils import log
 
     # From PyTorch
     if platform.system() == "Windows":
@@ -70,6 +71,7 @@ def run_cmake(build_temp, install_dir, debug=False):
     cmake_python_include_dir = distutils.sysconfig.get_python_inc()
 
     cmake_args = [
+        "-DCMAKE_INSTALL_PREFIX={}".format(os.path.dirname(install_dir)),
         "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={}".format(install_dir),
         "-DPython_EXECUTABLE={}".format(sys.executable),
         "-DPython_LIBRARIES={}".format(cmake_python_library),
@@ -81,7 +83,9 @@ def run_cmake(build_temp, install_dir, debug=False):
 
     if not os.path.exists(build_temp):
         os.makedirs(build_temp)
+    log.info('cmake ' + HERE + ' ' + ' '.join(cmake_args))
     subprocess.check_call(["cmake", HERE] + cmake_args, cwd=build_temp)
+    log.info('cmake --build . --target install ' + ' '.join(build_args))
     subprocess.check_call(
         ["cmake", "--build", ".", "--target", "install"] + build_args,
         cwd=build_temp,
