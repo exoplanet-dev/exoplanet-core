@@ -83,9 +83,9 @@ def run_cmake(build_temp, install_dir, debug=False):
 
     if not os.path.exists(build_temp):
         os.makedirs(build_temp)
-    log.info('cmake ' + HERE + ' ' + ' '.join(cmake_args))
+    log.info("cmake " + HERE + " " + " ".join(cmake_args))
     subprocess.check_call(["cmake", HERE] + cmake_args, cwd=build_temp)
-    log.info('cmake --build . --target install ' + ' '.join(build_args))
+    log.info("cmake --build . --target install " + " ".join(build_args))
     subprocess.check_call(
         ["cmake", "--build", ".", "--target", "install"] + build_args,
         cwd=build_temp,
