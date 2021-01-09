@@ -1,7 +1,6 @@
 #ifndef _EXOPLANET_XLA_KERNEL_HELPERS_H_
 #define _EXOPLANET_XLA_KERNEL_HELPERS_H_
 
-#include <bit>
 #include <stdexcept>
 #include <string>
 

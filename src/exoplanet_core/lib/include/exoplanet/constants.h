@@ -1,9 +1,35 @@
 #ifndef _EXOPLANET_CONSTANTS_H_
 #define _EXOPLANET_CONSTANTS_H_
 
+#include <algorithm>
 #include <cmath>
 
 namespace exoplanet {
+
+#ifdef __CUDACC__
+#define EXOPLANET_INLINE_OR_DEVICE __host__ __device__
+
+template <class T>
+EXOPLANET_INLINE_OR_DEVICE void swap(T& a, T& b) {
+  T c(a);
+  a = b;
+  b = c;
+}
+
+#else
+#define EXOPLANET_INLINE_OR_DEVICE inline
+
+template <class T>
+EXOPLANET_INLINE_OR_DEVICE void swap(T& a, T& b) {
+  std::swap(a, b);
+}
+
+template <class T>
+inline void sincos(const T& x, T* sx, T* cx) {
+  *sx = sin(x);
+  *cx = cos(x);
+}
+#endif
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846264338327950288
@@ -36,7 +62,7 @@ const double twopi = M_PI * 2;
 const double fourpi = M_PI * 4;
 
 template <typename T>
-int sgn(T val) {
+EXOPLANET_INLINE_OR_DEVICE int sgn(T val) {
   return (T(0) < val) - (val < T(0));
 }
 

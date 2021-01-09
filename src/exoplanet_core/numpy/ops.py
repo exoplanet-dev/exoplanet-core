@@ -13,14 +13,16 @@ def kepler(mean_anomaly, eccentricity):
     eccentricity = np.ascontiguousarray(eccentricity, dtype=np.float64)
     cosf = np.empty_like(mean_anomaly)
     sinf = np.empty_like(mean_anomaly)
-    return driver.solve_kepler(mean_anomaly, eccentricity, cosf, sinf)
+    driver.solve_kepler(mean_anomaly, eccentricity, cosf, sinf)
+    return cosf, sinf
 
 
 def quad_solution_vector(b, r):
     b = np.ascontiguousarray(b, dtype=np.float64)
     r = np.ascontiguousarray(r, dtype=np.float64)
     s = np.empty(r.shape + (3,), dtype=np.float64)
-    return driver.quad_solution_vector(b, r, s)
+    driver.quad_solution_vector(b, r, s)
+    return s
 
 
 def contact_points(a, e, cosw, sinw, cosi, sini, L):
@@ -34,6 +36,7 @@ def contact_points(a, e, cosw, sinw, cosi, sini, L):
     M_left = np.empty_like(a)
     M_right = np.empty_like(a)
     flag = np.empty_like(a, dtype=np.int32)
-    return driver.contact_points(
+    driver.contact_points(
         a, e, cosw, sinw, cosi, sini, L, M_left, M_right, flag
     )
+    return M_left, M_right, flag

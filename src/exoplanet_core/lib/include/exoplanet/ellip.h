@@ -1,6 +1,7 @@
 #ifndef _EXOPLANET_ELLIP_H_
 #define _EXOPLANET_ELLIP_H_
 
+#include <cfloat>
 #include <cmath>
 
 #include "constants.h"
@@ -35,9 +36,7 @@ Computes the function `cel(kc, p, a, b)` from Bulirsch (1969)
 
 */
 template <typename T>
-T CEL(T ksq, T kc, T p, T a, T b) {
-  const T eps = std::numeric_limits<T>::epsilon();
-
+EXOPLANET_INLINE_OR_DEVICE T CEL(const T& eps, T ksq, T kc, T p, T a, T b) {
   // In some rare cases, k^2 is so close to zero that it can actually
   // go slightly negative. Let's explicitly force it to zero.
   if (ksq < 0) ksq = 0.0;
@@ -57,7 +56,7 @@ T CEL(T ksq, T kc, T p, T a, T b) {
   if (ksq > 1) ksq = 1;
   T ca = sqrt(eps * ksq);
 
-  if (ca <= 0) ca = std::numeric_limits<T>::min();
+  if (ca <= 0) ca = DBL_MIN;
   T m = 1.0;
   T q, g, f, ee;
   ee = kc;
@@ -103,14 +102,14 @@ T CEL(T ksq, T kc, T p, T a, T b) {
 
 // Computes the function `cel(kc, p, a, b)` from Bulirsch (1969)
 template <typename T>
-T CEL(T ksq, T p, T a, T b) {
+EXOPLANET_INLINE_OR_DEVICE T CEL(const T& eps, T ksq, T p, T a, T b) {
   T kc;
   // Avoid undefined k2=1 case:
   if (ksq != 1.0)
     kc = sqrt(1.0 - ksq);
   else
-    kc = std::numeric_limits<T>::epsilon() * ksq;
-  return CEL(ksq, kc, p, a, b);
+    kc = eps * ksq;
+  return CEL(eps, ksq, kc, p, a, b);
 }
 
 // Computes the function `cel(kc, p, a, b)` from Bulirsch (1969).
@@ -118,10 +117,8 @@ T CEL(T ksq, T p, T a, T b) {
 // elliptic integrals with the same value of `kc`.
 // This assumes first value of a and b uses p; the rest have p = 1.
 template <typename T>
-inline void CEL(T k2, T kc, T p, T a1, T a2, T a3, T b1, T b2, T b3, T& Piofk, T& Eofk,
-                T& Em1mKdm) {
-  const T eps = std::numeric_limits<T>::epsilon();
-
+EXOPLANET_INLINE_OR_DEVICE void CEL(const T& eps, T k2, T kc, T p, T a1, T a2, T a3, T b1, T b2,
+                                    T b3, T& Piofk, T& Eofk, T& Em1mKdm) {
   // Bounds checks
   if (unlikely(k2 > 1))
     k2 = 1;

@@ -18,7 +18,7 @@ void solve_kepler(void *out_tuple, const void **in) {
   double *sinf = reinterpret_cast<double *>(out[1]);
 
   for (int n = 0; n < N; ++n) {
-    kepler::solve_kepler(M[n], ecc[n], cosf[n], sinf[n]);
+    kepler::solve_kepler(M[n], ecc[n], cosf + n, sinf + n);
   }
 }
 
@@ -31,11 +31,12 @@ void quad_solution_vector(void *out_tuple, const void **in) {
   double *s = reinterpret_cast<double *>(out[0]);
   double *dsdb = reinterpret_cast<double *>(out[1]);
   double *dsdr = reinterpret_cast<double *>(out[2]);
+  const double eps = std::numeric_limits<double>::epsilon();
 
   for (int n = 0; n < N; ++n) {
     int offset = 3 * n;
     int sgn = exoplanet::sgn(b[n]);
-    limbdark::quad_solution_vector<true>(std::abs(b[n]), r[n], s + offset, dsdb + offset,
+    limbdark::quad_solution_vector<true>(eps, std::abs(b[n]), r[n], s + offset, dsdb + offset,
                                          dsdr + offset);
     dsdb[offset] *= sgn;
     dsdb[offset + 1] *= sgn;

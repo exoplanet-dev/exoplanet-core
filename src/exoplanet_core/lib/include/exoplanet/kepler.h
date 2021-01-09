@@ -19,18 +19,12 @@
 namespace exoplanet {
 namespace kepler {
 
-#ifdef __CUDACC__
-#define INLINE_OR_DEVICE __host__ __device__
-#else
-#define INLINE_OR_DEVICE inline
-#endif
-
 // Evaluate sine with a series expansion.  We can guarantee that the
 // argument will be <=pi/4, and this reaches double precision (within
 // a few machine epsilon) at a signficantly lower cost than the
 // function call to sine that obeys the IEEE standard.
 template <typename Scalar>
-INLINE_OR_DEVICE Scalar shortsin(const Scalar &x) {
+EXOPLANET_INLINE_OR_DEVICE Scalar shortsin(const Scalar &x) {
   Scalar x2 = x * x;
   return x *
          (1 - x2 * (if3 -
@@ -40,7 +34,7 @@ INLINE_OR_DEVICE Scalar shortsin(const Scalar &x) {
 // Modulo 2pi: works best when you use an increment so that the
 // argument isn't too much larger than 2pi.
 template <typename Scalar>
-INLINE_OR_DEVICE Scalar MAmod(const Scalar &M_in) {
+EXOPLANET_INLINE_OR_DEVICE Scalar MAmod(const Scalar &M_in) {
   if (M_in < twopi && M_in >= 0) return M_in;
 
   if (M_in > twopi) {
@@ -62,7 +56,7 @@ INLINE_OR_DEVICE Scalar MAmod(const Scalar &M_in) {
 // (2017) in the singular corner (eccentricity close to 1, mean
 // anomaly close to zero).
 template <typename Scalar>
-INLINE_OR_DEVICE Scalar EAstart(const Scalar &M, const Scalar &ecc) {
+EXOPLANET_INLINE_OR_DEVICE Scalar EAstart(const Scalar &M, const Scalar &ecc) {
   const Scalar ome = 1. - ecc;
   const Scalar sqrt_ome = sqrt(ome);
 
@@ -92,8 +86,8 @@ INLINE_OR_DEVICE Scalar EAstart(const Scalar &M, const Scalar &ecc) {
 // E-ecc*sin(E)-M at all mean anomalies and at eccentricies up to
 // 0.999999.
 template <typename Scalar>
-INLINE_OR_DEVICE void calcEA(const Scalar &M, const Scalar &ecc, Scalar &E, Scalar &sinE,
-                             Scalar &cosE) {
+EXOPLANET_INLINE_OR_DEVICE void calcEA(const Scalar &M, const Scalar &ecc, Scalar *sinE,
+                                       Scalar *cosE) {
   const Scalar g2s_e = 0.2588190451025207623489 * ecc;
   const Scalar g3s_e = 0.5 * ecc;
   const Scalar g4s_e = 0.7071067811865475244008 * ecc;
@@ -197,48 +191,49 @@ INLINE_OR_DEVICE void calcEA(const Scalar &M, const Scalar &ecc, Scalar &E, Scal
 
   // Use series to update sin and cos
   if (ecc < 0.78 || MA > 0.4) {
-    E = MAsign * (EA + dEA);
-    sinE = MAsign * (sE * (1 - 0.5 * dEA * dEA) + dEA * cE);
-    cosE = cE * (1 - 0.5 * dEA * dEA) - dEA * sE;
+    // *E = MAsign * (EA + dEA);
+    *sinE = MAsign * (sE * (1 - 0.5 * dEA * dEA) + dEA * cE);
+    *cosE = cE * (1 - 0.5 * dEA * dEA) - dEA * sE;
 
   } else {
     // Use Householder's third order method to guarantee performance
     // in the singular corners
     dEA = num / (denom + dEA * (0.5 * sE + one_sixth * cE * dEA));
-    E = MAsign * (EA + dEA);
-    sinE = MAsign * (sE * (1 - 0.5 * dEA * dEA) + dEA * cE * (1 - dEA * dEA * one_sixth));
-    cosE = cE * (1 - 0.5 * dEA * dEA) - dEA * sE * (1 - dEA * dEA * one_sixth);
+    // *E = MAsign * (EA + dEA);
+    *sinE = MAsign * (sE * (1 - 0.5 * dEA * dEA) + dEA * cE * (1 - dEA * dEA * one_sixth));
+    *cosE = cE * (1 - 0.5 * dEA * dEA) - dEA * sE * (1 - dEA * dEA * one_sixth);
   }
 
   return;
 }
 
 template <typename Scalar>
-INLINE_OR_DEVICE Scalar solve_kepler(const Scalar &M, const Scalar &ecc, Scalar &cosf,
-                                     Scalar &sinf) {
-  Scalar E;
-  calcEA(M, ecc, E, sinf, cosf);
-
-  Scalar denom = 1 + cosf;
+EXOPLANET_INLINE_OR_DEVICE void to_f(const Scalar &ecc, const Scalar &ome, Scalar *cosf,
+                                     Scalar *sinf) {
+  Scalar denom = 1 + (*cosf);
   if (denom > 1.0e-10) {
-    Scalar tanf2 = sqrt((1 + ecc) / (1 - ecc)) * sinf / denom;  // tan(0.5*f)
+    Scalar tanf2 = sqrt((1 + ecc) / ome) * (*sinf) / denom;  // tan(0.5*f)
     Scalar tanf2_2 = tanf2 * tanf2;
 
     // Then we compute sin(f) and cos(f) using:
     // sin(f) = 2*tan(0.5*f)/(1 + tan(0.5*f)^2), and
     // cos(f) = (1 - tan(0.5*f)^2)/(1 + tan(0.5*f)^2)
     denom = 1 / (1 + tanf2_2);
-    sinf = 2 * tanf2 * denom;
-    cosf = (1 - tanf2_2) * denom;
+    *sinf = 2 * tanf2 * denom;
+    *cosf = (1 - tanf2_2) * denom;
   } else {
     // If cos(E) = -1, E = pi and tan(0.5*E) -> inf and f = E = pi
-    sinf = 0;
-    cosf = -1;
+    *sinf = 0;
+    *cosf = -1;
   }
-  return E;
 }
 
-#undef INLINE_OR_DEVICE
+template <typename Scalar>
+EXOPLANET_INLINE_OR_DEVICE void solve_kepler(const Scalar &M, const Scalar &ecc, Scalar *cosf,
+                                             Scalar *sinf) {
+  calcEA(M, ecc, sinf, cosf);
+  to_f(ecc, 1 - ecc, cosf, sinf);
+}
 
 }  // namespace kepler
 }  // namespace exoplanet

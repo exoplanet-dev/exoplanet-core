@@ -19,6 +19,15 @@ for _name, _value in cpu_driver.registrations().items():
     xla_client.register_cpu_custom_call_target(_name, _value)
 
 
+try:
+    from . import gpu_driver
+except ImportError:
+    pass
+else:
+    for _name, _value in gpu_driver.registrations().items():
+        xla_client.register_custom_call_target(_name, _value, platform="gpu")
+
+
 # **********
 # * KEPLER *
 # **********
@@ -85,6 +94,30 @@ def _kepler_translation_rule(c, M, ecc):
     )
 
 
+def _kepler_gpu_translation_rule(c, M, ecc):
+    shapes = (c.get_shape(M), c.get_shape(ecc))
+    if any(shape.element_type() != np.float64 for shape in shapes):
+        raise ValueError("float64 precision is required")
+
+    dims = tuple(shapes[0].dimensions())
+    if dims != shapes[1].dimensions():
+        raise ValueError("Dimension mismatch")
+    N = np.prod(dims).astype(np.int32)
+
+    order = tuple(range(len(dims) - 1, -1, -1))
+    shape = xla_client.Shape.array_shape(jnp.dtype(np.float64), dims, order)
+    opaque = gpu_driver.cuda_descriptor(N)
+
+    return xops.CustomCallWithLayout(
+        c,
+        b"cuda_kepler",
+        operands=(M, ecc),
+        shape_with_layout=xla_client.Shape.tuple_shape((shape, shape)),
+        operand_shapes_with_layout=(shape, shape),
+        opaque=opaque,
+    )
+
+
 def _kepler_jvp(args, tangents):
     M, e = args
     dM, de = tangents
@@ -116,6 +149,9 @@ kepler_prim.def_abstract_eval(_kepler_abstract_eval)
 xla.backend_specific_translations["cpu"][
     kepler_prim
 ] = _kepler_translation_rule
+xla.backend_specific_translations["gpu"][
+    kepler_prim
+] = _kepler_gpu_translation_rule
 ad.primitive_jvps[kepler_prim] = _kepler_jvp
 batching.primitive_batchers[kepler_prim] = _kepler_batch
 
@@ -195,6 +231,46 @@ def _quad_solution_vector_translation_rule(c, b, r):
     )
 
 
+def _quad_solution_vector_gpu_translation_rule(c, b, r):
+    shapes = (c.get_shape(b), c.get_shape(r))
+    if any(shape.element_type() != np.float64 for shape in shapes):
+        raise ValueError("float64 precision is required")
+
+    dims = tuple(shapes[0].dimensions())
+    if dims != shapes[1].dimensions():
+        raise ValueError("Dimension mismatch")
+    N = np.prod(dims).astype(np.int32)
+
+    out_shape = xla_client.Shape.array_shape(
+        jnp.dtype(np.float64),
+        dims + (3,),
+        tuple(range(len(dims), -1, -1)),
+    )
+    opaque = gpu_driver.cuda_descriptor(N)
+
+    return xops.CustomCallWithLayout(
+        c,
+        b"cuda_quad_solution_vector",
+        operands=(b, r),
+        shape_with_layout=xla_client.Shape.tuple_shape(
+            (out_shape, out_shape, out_shape)
+        ),
+        operand_shapes_with_layout=(
+            xla_client.Shape.array_shape(
+                jnp.dtype(np.float64),
+                dims,
+                tuple(range(len(dims) - 1, -1, -1)),
+            ),
+            xla_client.Shape.array_shape(
+                jnp.dtype(np.float64),
+                dims,
+                tuple(range(len(dims) - 1, -1, -1)),
+            ),
+        ),
+        opaque=opaque,
+    )
+
+
 # Note: this implementation only supports first-order differentiation and
 #       returning None will cause higher order operations to fail with a
 #       confusing error so there's probably a better solution. But that
@@ -237,6 +313,9 @@ quad_solution_vector_prim.def_abstract_eval(
 xla.backend_specific_translations["cpu"][
     quad_solution_vector_prim
 ] = _quad_solution_vector_translation_rule
+xla.backend_specific_translations["gpu"][
+    quad_solution_vector_prim
+] = _quad_solution_vector_gpu_translation_rule
 ad.primitive_jvps[quad_solution_vector_prim] = _quad_solution_vector_jvp
 batching.primitive_batchers[
     quad_solution_vector_prim

@@ -24,3 +24,4 @@ venv-test
 .envrc
 tmp
 var
+_skbuild
