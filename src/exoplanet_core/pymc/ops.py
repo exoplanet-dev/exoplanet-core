@@ -71,13 +71,13 @@ class Kepler(op.Op):
 
     def perform(self, node, inputs, outputs):
         M, ecc = inputs
-        cosf = resize_or_set(outputs, 0, M.shape)
-        sinf = resize_or_set(outputs, 1, M.shape)
-        driver.solve_kepler(M, ecc, cosf, sinf)
+        sinf = resize_or_set(outputs, 0, M.shape)
+        cosf = resize_or_set(outputs, 1, M.shape)
+        driver.solve_kepler(M, ecc, sinf, cosf)
 
     def grad(self, inputs, gradients):
         M, e = inputs
-        cosf, sinf = self(M, e)
+        sinf, cosf = self(M, e)
 
         ecosf = e * cosf
         ome2 = 1 - e ** 2
@@ -87,12 +87,12 @@ class Kepler(op.Op):
         bM = tt.zeros_like(M)
         be = tt.zeros_like(M)
         if not isinstance(gradients[0].type, aesara.gradient.DisconnectedType):
-            bM -= gradients[0] * sinf * dfdM
-            be -= gradients[0] * sinf * dfde
+            bM += gradients[0] * cosf * dfdM
+            be += gradients[0] * cosf * dfde
 
         if not isinstance(gradients[1].type, aesara.gradient.DisconnectedType):
-            bM += gradients[1] * cosf * dfdM
-            be += gradients[1] * cosf * dfde
+            bM -= gradients[1] * sinf * dfdM
+            be -= gradients[1] * sinf * dfde
 
         return [bM, be]
 

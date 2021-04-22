@@ -8,10 +8,10 @@ namespace exoplanet {
 
 namespace {
 template <typename Scalar>
-__global__ void KeplerKernel(int N, const Scalar* M, const Scalar* ecc, Scalar* cosf,
-                             Scalar* sinf) {
+__global__ void KeplerKernel(int N, const Scalar* M, const Scalar* ecc, Scalar* sinf,
+                             Scalar* cosf) {
   for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < N; idx += blockDim.x * gridDim.x) {
-    kepler::solve_kepler<Scalar>(M[idx], ecc[idx], cosf + idx, sinf + idx);
+    kepler::solve_kepler<Scalar>(M[idx], ecc[idx], sinf + idx, cosf + idx);
   }
 }
 
@@ -46,8 +46,8 @@ std::string BuildCudaDescriptor(int N) { return PackDescriptorAsString(SizeDescr
 void CudaKepler(cudaStream_t stream, void** buffers, const char* opaque, std::size_t opaque_len) {
   const double* M = reinterpret_cast<const double*>(buffers[0]);
   const double* ecc = reinterpret_cast<const double*>(buffers[1]);
-  double* cosf = reinterpret_cast<double*>(buffers[2]);
-  double* sinf = reinterpret_cast<double*>(buffers[3]);
+  double* sinf = reinterpret_cast<double*>(buffers[2]);
+  double* cosf = reinterpret_cast<double*>(buffers[3]);
 
   const auto& descriptor = *UnpackDescriptor<SizeDescriptor>(opaque, opaque_len);
   int N = descriptor.N;
@@ -55,7 +55,7 @@ void CudaKepler(cudaStream_t stream, void** buffers, const char* opaque, std::si
   const int block_dim = 128;
   const int grid_dim = std::min<int>(1024, (N + block_dim - 1) / block_dim);
 
-  KeplerKernel<<<grid_dim, block_dim, 0, stream>>>(N, M, ecc, cosf, sinf);
+  KeplerKernel<<<grid_dim, block_dim, 0, stream>>>(N, M, ecc, sinf, cosf);
   ThrowIfError(cudaGetLastError());
 }
 

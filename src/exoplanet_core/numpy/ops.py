@@ -11,10 +11,10 @@ from .. import driver
 def kepler(mean_anomaly, eccentricity):
     mean_anomaly = np.ascontiguousarray(mean_anomaly, dtype=np.float64)
     eccentricity = np.ascontiguousarray(eccentricity, dtype=np.float64)
-    cosf = np.empty_like(mean_anomaly)
     sinf = np.empty_like(mean_anomaly)
-    driver.solve_kepler(mean_anomaly, eccentricity, cosf, sinf)
-    return cosf, sinf
+    cosf = np.empty_like(mean_anomaly)
+    driver.solve_kepler(mean_anomaly, eccentricity, sinf, cosf)
+    return sinf, cosf
 
 
 def quad_solution_vector(b, r):

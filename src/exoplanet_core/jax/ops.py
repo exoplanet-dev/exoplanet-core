@@ -121,7 +121,7 @@ def _kepler_gpu_translation_rule(c, M, ecc):
 def _kepler_jvp(args, tangents):
     M, e = args
     dM, de = tangents
-    cosf, sinf = kepler(M, e)
+    sinf, cosf = kepler(M, e)
 
     # Pre-compute some things
     ecosf = e * cosf
@@ -134,7 +134,7 @@ def _kepler_jvp(args, tangents):
     if type(de) is not ad.Zero:
         df += de * (2 + ecosf) * sinf / ome2
 
-    return (cosf, sinf), (-sinf * df, cosf * df)
+    return (sinf, cosf), (cosf * df, -sinf * df)
 
 
 def _kepler_batch(args, axes):

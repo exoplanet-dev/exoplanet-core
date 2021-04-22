@@ -31,7 +31,7 @@ def kepler_data():
 
 def test_kepler(kepler_data):
     M, e, f = kepler_data
-    cosf, sinf = aesara.function([], ops.kepler(M, e))()
+    sinf, cosf = aesara.function([], ops.kepler(M, e))()
     assert np.all(np.isfinite(cosf))
     np.testing.assert_allclose(cosf, np.cos(f), atol=1e-7)
     assert np.all(np.isfinite(sinf))

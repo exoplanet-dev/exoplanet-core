@@ -14,11 +14,11 @@ void solve_kepler(void *out_tuple, const void **in) {
   const int N = *reinterpret_cast<const int *>(in[0]);
   const double *M = reinterpret_cast<const double *>(in[1]);
   const double *ecc = reinterpret_cast<const double *>(in[2]);
-  double *cosf = reinterpret_cast<double *>(out[0]);
-  double *sinf = reinterpret_cast<double *>(out[1]);
+  double *sinf = reinterpret_cast<double *>(out[0]);
+  double *cosf = reinterpret_cast<double *>(out[1]);
 
   for (int n = 0; n < N; ++n) {
-    kepler::solve_kepler(M[n], ecc[n], cosf + n, sinf + n);
+    kepler::solve_kepler(M[n], ecc[n], sinf + n, cosf + n);
   }
 }
 
