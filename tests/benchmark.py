@@ -114,7 +114,8 @@ def test_quad_limbdark_starry_benchmark(benchmark, limbdark_args):
     b_ = tt.dvector()
     r_ = tt.dscalar()
     m = starry.Map(udeg=2)
-    m[1:] = np.array([u1_, u2_])
+    m[1] = u1_
+    m[2] = u2_
     func = aesara.function([u1_, u2_, b_, r_], m.flux(xo=b_, ro=r_) - 1)
     func(*args)
     benchmark(func, *args)
