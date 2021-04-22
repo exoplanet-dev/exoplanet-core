@@ -50,5 +50,5 @@ def check_contact_points(func, L, a, b, e, w):
         np.testing.assert_allclose(
             target,
             _get_b2(sinf, cosf, a, e, cosw, sinw, cosi, sini),
-            atol=1e-6,
+            atol=1e-5,
         )
