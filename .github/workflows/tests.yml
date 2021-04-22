@@ -68,7 +68,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install -U pip
-          python -m pip install cython
+          python -m pip install cython h5py
           python -m pip install -e .[benchmark]
 
       - name: Get dependency versions
