@@ -208,8 +208,8 @@ EXOPLANET_INLINE_OR_DEVICE void calcEA(const Scalar &M, const Scalar &ecc, Scala
 }
 
 template <typename Scalar>
-EXOPLANET_INLINE_OR_DEVICE void to_f(const Scalar &ecc, const Scalar &ome, Scalar *cosf,
-                                     Scalar *sinf) {
+EXOPLANET_INLINE_OR_DEVICE void to_f(const Scalar &ecc, const Scalar &ome, Scalar *sinf,
+                                     Scalar *cosf) {
   Scalar denom = 1 + (*cosf);
   if (denom > 1.0e-10) {
     Scalar tanf2 = sqrt((1 + ecc) / ome) * (*sinf) / denom;  // tan(0.5*f)
@@ -229,10 +229,10 @@ EXOPLANET_INLINE_OR_DEVICE void to_f(const Scalar &ecc, const Scalar &ome, Scala
 }
 
 template <typename Scalar>
-EXOPLANET_INLINE_OR_DEVICE void solve_kepler(const Scalar &M, const Scalar &ecc, Scalar *cosf,
-                                             Scalar *sinf) {
+EXOPLANET_INLINE_OR_DEVICE void solve_kepler(const Scalar &M, const Scalar &ecc, Scalar *sinf,
+                                             Scalar *cosf) {
   calcEA(M, ecc, sinf, cosf);
-  to_f(ecc, 1 - ecc, cosf, sinf);
+  to_f(ecc, 1 - ecc, sinf, cosf);
 }
 
 }  // namespace kepler

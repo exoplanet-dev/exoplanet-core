@@ -30,6 +30,8 @@ CLASSIFIERS = [
 ]
 INSTALL_REQUIRES = ["numpy>=1.13.0"]
 EXTRA_REQUIRE = {
+    "pymc": ["pymc3>=3.9", "aesara-theano-fallback>=0.0.2"],
+    "jax": ["jax", "jaxlib"],
     "test": ["pytest", "pytest-cov>=2.6.1"],
     "benchmark": [
         "pytest",
@@ -37,7 +39,8 @@ EXTRA_REQUIRE = {
         "radvel",
         "kepler.py",
         "batman-package",
-        "exoplanet==0.4.3",
+        "starry",
+        "exoplanet==0.4.5",
     ],
 }
 

@@ -41,12 +41,14 @@ def check_contact_points(func, L, a, b, e, w):
     if np.any(flag):
         return
 
-    cosf1, sinf1 = kepler(M1, e)
-    cosf2, sinf2 = kepler(M2, e)
+    sinf1, cosf1 = kepler(M1, e)
+    sinf2, cosf2 = kepler(M2, e)
 
     fs = [(sinf1, cosf1), (sinf2, cosf2)]
     assert np.all(np.isfinite(fs))
     for sinf, cosf in fs:
-        assert np.allclose(
-            target, _get_b2(sinf, cosf, a, e, cosw, sinw, cosi, sini)
+        np.testing.assert_allclose(
+            target,
+            _get_b2(sinf, cosf, a, e, cosw, sinw, cosi, sini),
+            atol=1e-5,
         )

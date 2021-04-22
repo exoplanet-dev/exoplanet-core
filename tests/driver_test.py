@@ -9,7 +9,7 @@ from exoplanet_core.testing import get_mean_and_true_anomaly
 def check_kepler(e, E):
     M, f = get_mean_and_true_anomaly(e, E)
     cosf0, sinf0 = np.nan + np.zeros_like(M), np.nan + np.zeros_like(M)
-    driver.solve_kepler(M, e, cosf0, sinf0)
+    driver.solve_kepler(M, e, sinf0, cosf0)
     assert np.all(np.isfinite(cosf0))
     np.testing.assert_allclose(cosf0, np.cos(f), atol=1e-7)
     assert np.all(np.isfinite(sinf0))

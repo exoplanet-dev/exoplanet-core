@@ -23,7 +23,7 @@ except ImportError:
 else:
     from packaging import version
 
-    if version.parse(exoplanet.__version__) != version.parse("0.4.3"):
+    if version.parse(exoplanet.__version__) != version.parse("0.4.5"):
         exoplanet = None
 
 try:
@@ -70,7 +70,7 @@ def test_radvel_kepler_benchmark(benchmark, kepler_args):
         denom = 1 / (1 + tanf2_2)
         cosf = (1 - tanf2_2) * denom
         sinf = 2 * tanf2 * denom
-        return cosf, sinf
+        return sinf, cosf
 
 
 @pytest.fixture(scope="module", params=[0.01, 0.1, 0.9])
@@ -103,8 +103,8 @@ def test_quad_limbdark_exoplanet_benchmark(benchmark, limbdark_args):
 @pytest.mark.skipif(starry is None, reason="starry is not installed")
 @pytest.mark.benchmark(group="limbdark", warmup=True)
 def test_quad_limbdark_starry_benchmark(benchmark, limbdark_args):
-    import theano
-    import theano.tensor as tt
+    import aesara_theano_fallback.tensor as tt
+    from aesara_theano_fallback import aesara
 
     u1, u2, b, r = limbdark_args
     args = (u1, u2, b, r[0])
@@ -114,8 +114,9 @@ def test_quad_limbdark_starry_benchmark(benchmark, limbdark_args):
     b_ = tt.dvector()
     r_ = tt.dscalar()
     m = starry.Map(udeg=2)
-    m[1:] = [u1_, u2_]
-    func = theano.function([u1_, u2_, b_, r_], m.flux(xo=b_, ro=r_) - 1)
+    m[1] = u1_
+    m[2] = u2_
+    func = aesara.function([u1_, u2_, b_, r_], m.flux(xo=b_, ro=r_) - 1)
     func(*args)
     benchmark(func, *args)
 

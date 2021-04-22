@@ -25,17 +25,17 @@ struct flat_unchecked_array {
 
 void solve_kepler(py::array_t<double, py::array::c_style> M_in,
                   py::array_t<double, py::array::c_style> ecc_in,
-                  py::array_t<double, py::array::c_style> cosf_out,
-                  py::array_t<double, py::array::c_style> sinf_out) {
+                  py::array_t<double, py::array::c_style> sinf_out,
+                  py::array_t<double, py::array::c_style> cosf_out) {
   flat_unchecked_array<double, py::array::c_style> M(M_in), ecc(ecc_in);
-  flat_unchecked_array<double, py::array::c_style> cosf(cosf_out, true), sinf(sinf_out, true);
+  flat_unchecked_array<double, py::array::c_style> sinf(sinf_out, true), cosf(cosf_out, true);
   ssize_t N = M.size();
   if (ecc.size() != N || cosf.size() != N || sinf.size() != N)
     throw std::invalid_argument("dimension mismatch");
   for (ssize_t n = 0; n < N; ++n) {
     if (ecc(n) < 0 || ecc(n) > 1)
       throw std::invalid_argument("eccentricity must be in the range [0, 1)");
-    exoplanet::kepler::solve_kepler(M(n), ecc(n), &(cosf(n)), &(sinf(n)));
+    exoplanet::kepler::solve_kepler(M(n), ecc(n), &(sinf(n)), &(cosf(n)));
   }
   // return std::make_tuple(cosf_out, sinf_out);
 }
@@ -119,7 +119,7 @@ PYBIND11_MODULE(driver, m) {
     The computation engine for exoplanet
 )doc";
   m.def("solve_kepler", &driver::solve_kepler, py::arg("mean_anomaly"), py::arg("eccentricity"),
-        py::arg("cos_true_anomaly").noconvert(), py::arg("sin_true_anomaly").noconvert());
+        py::arg("sin_true_anomaly").noconvert(), py::arg("cos_true_anomaly").noconvert());
   m.def("quad_solution_vector", &driver::quad_solution_vector, py::arg("b"), py::arg("r"),
         py::arg("s").noconvert());
   m.def("quad_solution_vector_with_grad", &driver::quad_solution_vector_with_grad, py::arg("b"),

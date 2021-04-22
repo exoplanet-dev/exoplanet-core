@@ -11,15 +11,17 @@ jax = pytest.importorskip("jax")
 jnp = pytest.importorskip("jax.numpy")
 theano = pytest.importorskip("theano")
 tt = pytest.importorskip("theano.tensor")
-ops = pytest.importorskip("exoplanet_core.theano.ops")
+ops = pytest.importorskip("exoplanet_core.pymc.ops")
 
-try:
-    from theano.link.jax import JAXLinker
-except ImportError:
-    try:
-        from theano.sandbox.jax_linker import JAXLinker
-    except ImportError:
-        pytest.skip("Theano-PyMC not installed", allow_module_level=True)
+pytest.skip("jaxify is not currently supported", allow_module_level=True)
+
+# try:
+#     from theano.link.jax import JAXLinker
+# except ImportError:
+#     try:
+#         from theano.sandbox.jax_linker import JAXLinker
+#     except ImportError:
+#         pytest.skip("Theano-PyMC not installed", allow_module_level=True)
 
 
 @pytest.fixture

@@ -4,9 +4,10 @@ __all__ = ["kepler", "quad_solution_vector"]
 
 from itertools import chain
 
+import aesara_theano_fallback.tensor as tt
 import numpy as np
-import theano
-import theano.tensor as tt
+from aesara_theano_fallback import aesara
+from aesara_theano_fallback.graph import basic, op
 
 from .. import driver
 
@@ -31,7 +32,7 @@ def resize_or_set(outputs, n, shape, dtype=np.float64):
 # **********
 # * KEPLER *
 # **********
-class Kepler(theano.Op):
+class Kepler(op.Op):
     r"""Solve Kepler's equation
 
     This op numerically evaluates the solution to Kepler's equation for given
@@ -63,20 +64,20 @@ class Kepler(theano.Op):
         if any(i.dtype != "float64" for i in in_args):
             raise ValueError("float64 precision is required")
         out_args = [in_args[0].type(), in_args[0].type()]
-        return theano.Apply(self, in_args, out_args)
+        return basic.Apply(self, in_args, out_args)
 
-    def infer_shape(self, node, shapes):
-        return shapes
+    def infer_shape(self, *args):
+        return args[-1]
 
     def perform(self, node, inputs, outputs):
         M, ecc = inputs
-        cosf = resize_or_set(outputs, 0, M.shape)
-        sinf = resize_or_set(outputs, 1, M.shape)
-        driver.solve_kepler(M, ecc, cosf, sinf)
+        sinf = resize_or_set(outputs, 0, M.shape)
+        cosf = resize_or_set(outputs, 1, M.shape)
+        driver.solve_kepler(M, ecc, sinf, cosf)
 
     def grad(self, inputs, gradients):
         M, e = inputs
-        cosf, sinf = self(M, e)
+        sinf, cosf = self(M, e)
 
         ecosf = e * cosf
         ome2 = 1 - e ** 2
@@ -85,13 +86,13 @@ class Kepler(theano.Op):
 
         bM = tt.zeros_like(M)
         be = tt.zeros_like(M)
-        if not isinstance(gradients[0].type, theano.gradient.DisconnectedType):
-            bM -= gradients[0] * sinf * dfdM
-            be -= gradients[0] * sinf * dfde
+        if not isinstance(gradients[0].type, aesara.gradient.DisconnectedType):
+            bM += gradients[0] * cosf * dfdM
+            be += gradients[0] * cosf * dfde
 
-        if not isinstance(gradients[1].type, theano.gradient.DisconnectedType):
-            bM += gradients[1] * cosf * dfdM
-            be += gradients[1] * cosf * dfde
+        if not isinstance(gradients[1].type, aesara.gradient.DisconnectedType):
+            bM -= gradients[1] * sinf * dfdM
+            be -= gradients[1] * sinf * dfde
 
         return [bM, be]
 
@@ -107,11 +108,11 @@ kepler = Kepler()
 # **********
 # * STARRY *
 # **********
-class QuadSolutionVector(theano.Op):
+class QuadSolutionVector(op.Op):
     r"""Compute the "solution vector" for a quadratic limb-darkening model
 
     Note that you probably don't ever want to directly instantiate this op.
-    Use ``exoplanet_core.theano.ops.quad_solution_vector`` instead.
+    Use ``exoplanet_core.pymc.ops.quad_solution_vector`` instead.
 
     This will return a tensor with an extra dimension of size 3 on the right
     hand side which represents the solution vector for each pair of impact
@@ -142,9 +143,10 @@ class QuadSolutionVector(theano.Op):
             )
             for _ in range(3)
         ]
-        return theano.Apply(self, in_args, o)
+        return basic.Apply(self, in_args, o)
 
-    def infer_shape(self, node, shapes):
+    def infer_shape(self, *args):
+        shapes = args[-1]
         shape = tuple(shapes[0]) + (3,)
         return shape, shape, shape
 
@@ -162,15 +164,15 @@ class QuadSolutionVector(theano.Op):
         bs = gradients[0]
 
         for g in gradients[1:]:
-            if not isinstance(g.type, theano.gradient.DisconnectedType):
+            if not isinstance(g.type, aesara.gradient.DisconnectedType):
                 raise ValueError(
                     "Backpropagation is only supported for the solution vector"
                 )
 
-        if isinstance(bs.type, theano.gradient.DisconnectedType):
+        if isinstance(bs.type, aesara.gradient.DisconnectedType):
             return [
-                theano.gradient.DisconnectedType()(),
-                theano.gradient.DisconnectedType()(),
+                aesara.gradient.DisconnectedType()(),
+                aesara.gradient.DisconnectedType()(),
             ]
 
         return [tt.sum(bs * dsdb, axis=-1), tt.sum(bs * dsdr, axis=-1)]
@@ -191,7 +193,7 @@ def quad_solution_vector(b, r):
 # ******************
 # * CONTACT POINTS *
 # ******************
-class ContactPoints(theano.Op):
+class ContactPoints(op.Op):
     __props__ = ()
 
     def make_node(self, a, e, cosw, sinw, cosi, sini, L):
@@ -208,9 +210,10 @@ class ContactPoints(theano.Op):
                 dtype="int32",
             ),
         ]
-        return theano.Apply(self, in_args, out_args)
+        return basic.Apply(self, in_args, out_args)
 
-    def infer_shape(self, node, shapes):
+    def infer_shape(self, *args):
+        shapes = args[-1]
         return (shapes[0], shapes[0], shapes[0])
 
     def perform(self, node, inputs, outputs):
@@ -230,33 +233,33 @@ contact_points = ContactPoints()
 #    \__|_||_\___\__,_|_||_\___/  _/ \__,_/_\_\
 #                                |__/
 
-try:
-    from theano.link.jax.jax_dispatch import jax_funcify
-except ImportError:
-    try:
-        from theano.sandbox.jaxify import jax_funcify
-    except ImportError:
-        jax_funcify = None
+# try:
+#     from theano.link.jax.jax_dispatch import jax_funcify
+# except ImportError:
+#     try:
+#         from theano.sandbox.jaxify import jax_funcify
+#     except ImportError:
+#         jax_funcify = None
 
-if jax_funcify is not None:
+# if jax_funcify is not None:
 
-    try:
-        from ..jax import ops as jax_ops
-    except ImportError:
-        pass
-    else:
+#     try:
+#         from ..jax import ops as jax_ops
+#     except ImportError:
+#         pass
+#     else:
 
-        @jax_funcify.register(Kepler)
-        def jax_funcify_Kepler(op):
-            return jax_ops.kepler
+#         @jax_funcify.register(Kepler)
+#         def jax_funcify_Kepler(op):
+#             return jax_ops.kepler
 
-        @jax_funcify.register(QuadSolutionVector)
-        def jax_funcify_QuadSolutionVector(op):
-            def jax_quad_solution_vector(b, r):
-                return jax_ops._base_quad_solution_vector(b, r)
+#         @jax_funcify.register(QuadSolutionVector)
+#         def jax_funcify_QuadSolutionVector(op):
+#             def jax_quad_solution_vector(b, r):
+#                 return jax_ops._base_quad_solution_vector(b, r)
 
-            return jax_quad_solution_vector
+#             return jax_quad_solution_vector
 
-        @jax_funcify.register(ContactPoints)
-        def jax_funcify_ContactPoints(op):
-            return jax_ops.contact_points
+#         @jax_funcify.register(ContactPoints)
+#         def jax_funcify_ContactPoints(op):
+#             return jax_ops.contact_points

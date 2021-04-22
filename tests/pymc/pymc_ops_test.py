@@ -9,8 +9,8 @@ from exoplanet_core.testing import (
     get_mean_and_true_anomaly,
 )
 
-theano = pytest.importorskip("theano")
-ops = pytest.importorskip("exoplanet_core.theano.ops")
+aesara = pytest.importorskip("aesara_theano_fallback.aesara")
+ops = pytest.importorskip("exoplanet_core.pymc.ops")
 
 
 def compare_to_numpy(nop, op, *args):
@@ -31,7 +31,7 @@ def kepler_data():
 
 def test_kepler(kepler_data):
     M, e, f = kepler_data
-    cosf, sinf = theano.function([], ops.kepler(M, e))()
+    sinf, cosf = aesara.function([], ops.kepler(M, e))()
     assert np.all(np.isfinite(cosf))
     np.testing.assert_allclose(cosf, np.cos(f), atol=1e-7)
     assert np.all(np.isfinite(sinf))
@@ -42,13 +42,13 @@ def test_kepler_grad(kepler_data):
     M, e, f = kepler_data
     np.random.seed(1324)
     ind = 100
-    theano.tensor.verify_grad(
+    aesara.tensor.verify_grad(
         lambda *x: ops.kepler(*x)[0],
         [M[:, ind], e[:, ind]],
         rng=np.random,
         eps=1e-8,
     )
-    theano.tensor.verify_grad(
+    aesara.tensor.verify_grad(
         lambda *x: ops.kepler(*x)[1],
         [M[:, ind], e[:, ind]],
         rng=np.random,
@@ -64,9 +64,9 @@ def limbdark_data():
 
 
 def test_quad_solution_vector(limbdark_data):
-    b_ = theano.tensor.dmatrix()
-    r_ = theano.tensor.dmatrix()
-    func = theano.function([b_, r_], ops.quad_solution_vector(b_, r_))
+    b_ = aesara.tensor.dmatrix()
+    r_ = aesara.tensor.dmatrix()
+    func = aesara.function([b_, r_], ops.quad_solution_vector(b_, r_))
     compare_to_numpy(nops.quad_solution_vector, func, *limbdark_data)
 
 
@@ -78,7 +78,7 @@ def test_quad_solution_vector_grad(limbdark_data):
     m &= np.abs(np.abs(b) - (1 - r)) > 2 * eps
     m &= np.abs(np.abs(b) - (1 + r)) > 2 * eps
 
-    theano.tensor.verify_grad(
+    aesara.tensor.verify_grad(
         ops.quad_solution_vector, (b[m], r[m]), rng=np.random, eps=eps
     )
 
@@ -86,8 +86,8 @@ def test_quad_solution_vector_grad(limbdark_data):
 @pytest.mark.parametrize("a", [5.0, 12.1234, 20000.0])
 @pytest.mark.parametrize("L", [0.7, 1.0, 1.5])
 def test_contact_points(a, L):
-    args = [theano.tensor.dscalar() for _ in range(7)]
-    func = theano.function(args, ops.contact_points(*args))
+    args = [aesara.tensor.dscalar() for _ in range(7)]
+    func = aesara.function(args, ops.contact_points(*args))
 
     es = np.linspace(0, 1, 25)[:-1]
     ws = np.linspace(-np.pi, np.pi, 51)
