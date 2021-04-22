@@ -233,33 +233,33 @@ contact_points = ContactPoints()
 #    \__|_||_\___\__,_|_||_\___/  _/ \__,_/_\_\
 #                                |__/
 
-try:
-    from theano.link.jax.jax_dispatch import jax_funcify
-except ImportError:
-    try:
-        from theano.sandbox.jaxify import jax_funcify
-    except ImportError:
-        jax_funcify = None
+# try:
+#     from theano.link.jax.jax_dispatch import jax_funcify
+# except ImportError:
+#     try:
+#         from theano.sandbox.jaxify import jax_funcify
+#     except ImportError:
+#         jax_funcify = None
 
-if jax_funcify is not None:
+# if jax_funcify is not None:
 
-    try:
-        from ..jax import ops as jax_ops
-    except ImportError:
-        pass
-    else:
+#     try:
+#         from ..jax import ops as jax_ops
+#     except ImportError:
+#         pass
+#     else:
 
-        @jax_funcify.register(Kepler)
-        def jax_funcify_Kepler(op):
-            return jax_ops.kepler
+#         @jax_funcify.register(Kepler)
+#         def jax_funcify_Kepler(op):
+#             return jax_ops.kepler
 
-        @jax_funcify.register(QuadSolutionVector)
-        def jax_funcify_QuadSolutionVector(op):
-            def jax_quad_solution_vector(b, r):
-                return jax_ops._base_quad_solution_vector(b, r)
+#         @jax_funcify.register(QuadSolutionVector)
+#         def jax_funcify_QuadSolutionVector(op):
+#             def jax_quad_solution_vector(b, r):
+#                 return jax_ops._base_quad_solution_vector(b, r)
 
-            return jax_quad_solution_vector
+#             return jax_quad_solution_vector
 
-        @jax_funcify.register(ContactPoints)
-        def jax_funcify_ContactPoints(op):
-            return jax_ops.contact_points
+#         @jax_funcify.register(ContactPoints)
+#         def jax_funcify_ContactPoints(op):
+#             return jax_ops.contact_points

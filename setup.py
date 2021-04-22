@@ -40,7 +40,7 @@ EXTRA_REQUIRE = {
         "kepler.py",
         "batman-package",
         "starry",
-        "exoplanet==0.4.3",
+        "exoplanet==0.4.5",
     ],
 }
 
