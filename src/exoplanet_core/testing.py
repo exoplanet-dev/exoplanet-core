@@ -48,5 +48,7 @@ def check_contact_points(func, L, a, b, e, w):
     assert np.all(np.isfinite(fs))
     for sinf, cosf in fs:
         np.testing.assert_allclose(
-            target, _get_b2(sinf, cosf, a, e, cosw, sinw, cosi, sini)
+            target,
+            _get_b2(sinf, cosf, a, e, cosw, sinw, cosi, sini),
+            atol=1e-6,
         )
