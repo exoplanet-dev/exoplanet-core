@@ -103,8 +103,8 @@ def test_quad_limbdark_exoplanet_benchmark(benchmark, limbdark_args):
 @pytest.mark.skipif(starry is None, reason="starry is not installed")
 @pytest.mark.benchmark(group="limbdark", warmup=True)
 def test_quad_limbdark_starry_benchmark(benchmark, limbdark_args):
-    import theano
-    import theano.tensor as tt
+    import aesara_theano_fallback.tensor as tt
+    from aesara_theano_fallback import aesara
 
     u1, u2, b, r = limbdark_args
     args = (u1, u2, b, r[0])
@@ -115,7 +115,7 @@ def test_quad_limbdark_starry_benchmark(benchmark, limbdark_args):
     r_ = tt.dscalar()
     m = starry.Map(udeg=2)
     m[1:] = [u1_, u2_]
-    func = theano.function([u1_, u2_, b_, r_], m.flux(xo=b_, ro=r_) - 1)
+    func = aesara.function([u1_, u2_, b_, r_], m.flux(xo=b_, ro=r_) - 1)
     func(*args)
     benchmark(func, *args)
 

@@ -11,7 +11,7 @@ jax = pytest.importorskip("jax")
 jnp = pytest.importorskip("jax.numpy")
 theano = pytest.importorskip("theano")
 tt = pytest.importorskip("theano.tensor")
-ops = pytest.importorskip("exoplanet_core.theano.ops")
+ops = pytest.importorskip("exoplanet_core.pymc.ops")
 
 try:
     from theano.link.jax import JAXLinker
