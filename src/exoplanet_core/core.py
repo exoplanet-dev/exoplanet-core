@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 
-__all__ = ["get_cl", "quad_limbdark_light_curve"]
-
+__all__ = ["quad_limbdark_light_curve", "kepler"]
 
 import numpy as np
 
-from .numpy import ops
+from .numpy.ops import kepler, quad_solution_vector
 
 
 def get_cl(u1, u2):
@@ -22,4 +21,4 @@ def quad_limbdark_light_curve(u1, u2, b, r):
     c = get_cl(u1, u2)
     b = np.asarray(b, dtype=np.float64, order="C")
     r = np.asarray(r, dtype=np.float64, order="C")
-    return np.dot(ops.quad_solution_vector(b, r), c) - 1
+    return np.dot(quad_solution_vector(b, r), c) - 1
