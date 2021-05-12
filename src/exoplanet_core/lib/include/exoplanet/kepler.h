@@ -37,7 +37,7 @@ template <typename Scalar>
 EXOPLANET_INLINE_OR_DEVICE Scalar MAmod(const Scalar &M_in) {
   if (M_in < twopi && M_in >= 0) return M_in;
 
-  if (M_in > twopi) {
+  if (M_in >= twopi) {
     const Scalar M = M_in - twopi;
     if (M > twopi)
       return fmod(M, Scalar(twopi));
