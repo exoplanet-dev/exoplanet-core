@@ -19,7 +19,7 @@ jobs:
           - 'aesara-theano-fallback "pymc3~=3.9.0" "arviz<0.11"'
           - 'aesara-theano-fallback "pymc3~=3.10.0" "arviz<0.11"'
           - 'aesara-theano-fallback "pymc3~=3.11.0"'
-          - 'aesara-theano-fallback "https://github.com/pymc-devs/pymc3/archive/master.zip"'
+          - 'aesara-theano-fallback "https://github.com/pymc-devs/pymc3/archive/v3.zip"'
         include:
           - os: "windows-latest"
             python-version: "3.9"
