@@ -91,7 +91,7 @@ from exoplanet_core import quad_limbdark_light_curve
 u1, u2 = 0.3, 0.2
 ror = 0.05
 b = # Compute the impact parameter as a function of time
-flux = quad_limbdark_light_curve(b, ror)
+flux = quad_limbdark_light_curve(u1, u2, b, ror)
 ```
 
 where `u1` and `u2` are the usual limb darkening parameters and the resulting
