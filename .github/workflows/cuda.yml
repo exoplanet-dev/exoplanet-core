@@ -20,7 +20,7 @@ jobs:
           DEBIAN_FRONTEND: "noninteractive"
 
       - name: Install CMake
-        uses: jwlawson/actions-setup-cmake@v1.9
+        uses: jwlawson/actions-setup-cmake@v1.10
 
       - name: Get the version info for NVCC and CMake
         run: |
