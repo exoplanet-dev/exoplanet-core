@@ -15,20 +15,20 @@ namespace limbdark {
 #endif
 
 template <typename Scalar>
-EXOPLANET_INLINE_OR_DEVICE void set_zero3(Scalar* x) {
+EXOPLANET_DEVICE inline void set_zero3(Scalar* x) {
   x[0] = x[1] = x[2] = 0.0;
 }
 
 template <typename Scalar>
-EXOPLANET_INLINE_OR_DEVICE bool is_close(const Scalar& a, const Scalar& b, const Scalar& eps) {
+EXOPLANET_DEVICE inline bool is_close(const Scalar& a, const Scalar& b, const Scalar& eps) {
   return unlikely(std::abs(a - b) <= eps);
 }
 
 // NOTE: Both b and r MUST BE POSITIVE!!
 template <bool ComputeGradient, typename Scalar = double>
-EXOPLANET_INLINE_OR_DEVICE void quad_solution_vector(const Scalar eps, const Scalar& b_,
-                                                     const Scalar& r, Scalar* s, Scalar* dsdb,
-                                                     Scalar* dsdr) {
+EXOPLANET_DEVICE inline void quad_solution_vector(const Scalar eps, const Scalar& b_,
+                                                  const Scalar& r, Scalar* s, Scalar* dsdb,
+                                                  Scalar* dsdr) {
   using std::max;
   Scalar b = b_;
 

@@ -5,6 +5,7 @@ __all__ = ["kepler", "quad_solution_vector", "contact_points"]
 from functools import partial
 
 import numpy as np
+import jax
 from jax import core
 from jax import numpy as jnp
 from jax.abstract_arrays import ShapedArray
@@ -386,3 +387,58 @@ xla.backend_specific_translations["cpu"][
     contact_points_prim
 ] = _contact_points_translation_rule
 batching.primitive_batchers[contact_points_prim] = _contact_points_batch
+
+
+# ******
+# * P1 *
+# ******
+def p1(b, r, phi):
+    return p1_prim.bind(*jnp.broadcast_arrays(b, r, phi))
+
+
+p1_dtype_rule = partial(
+    jax.lax.naryop_dtype_rule,
+    jax.lax._input_dtype,
+    (jax.lax._float, jax.lax._float, jax.lax._float),
+    "p1",
+)
+
+
+def p1_shape_rule(b, r, phi):
+    return b.shape
+
+
+def _p1_translation_rule(c, *args):
+    dtypes = set(
+        (tuple(s.dimensions()), jnp.dtype(s.element_type()))
+        for s in map(c.get_shape, args)
+    )
+    assert len(dtypes) == 1
+    shape, dtype = dtypes[0]
+    assert dtype in (jnp.float32, jnp.float64)
+    N = np.prod(shape).astype(np.int64)
+
+    name = b"p1_f32" if dtype == jnp.float32 else b"p1_f64"
+    order = tuple(range(len(shape) - 1, -1, -1))
+    xshape = xla_client.Shape.array_shape(dtype, shape, order)
+
+    return xops.CustomCallWithLayout(
+        c,
+        name,
+        operands=(xops.ConstantLiteral(c, N), *args),
+        shape_with_layout=xshape,
+        operand_shapes_with_layout=(
+            xla_client.Shape.array_shape(jnp.dtype(jnp.int64), (), ()),
+            xshape,
+            xshape,
+            xshape,
+        ),
+    )
+
+
+p1_p = jax.lax.standard_primitive(
+    p1_shape_rule,
+    p1_dtype_rule,
+    "p1",
+    translation_rule=_p1_translation_rule,
+)

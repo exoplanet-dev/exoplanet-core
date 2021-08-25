@@ -71,11 +71,27 @@ void contact_points(void *out_tuple, const void **in) {
   }
 }
 
+template <typename Scalar>
+void p1(void *out, const void **in) {
+  Scalar *p = reinterpret_cast<Scalar *>(out);
+
+  const std::int64_t N = *reinterpret_cast<const std::int64_t *>(in[0]);
+  const Scalar *b = reinterpret_cast<const Scalar *>(in[1]);
+  const Scalar *r = reinterpret_cast<const Scalar *>(in[2]);
+  const Scalar *phi = reinterpret_cast<const Scalar *>(in[3]);
+
+  for (std::int64_t n = 0; n < N; ++n) {
+    p[n] = s1::numerical_p1(b[n], r[n], phi[n]);
+  }
+}
+
 pybind11::dict Registrations() {
   pybind11::dict dict;
   dict["solve_kepler"] = EncapsulateFunction(solve_kepler);
   dict["quad_solution_vector"] = EncapsulateFunction(quad_solution_vector);
   dict["contact_points"] = EncapsulateFunction(contact_points);
+  dict["p1_f32"] = EncapsulateFunction(p1<float>);
+  dict["p1_f64"] = EncapsulateFunction(p1<double>);
   return dict;
 }
 

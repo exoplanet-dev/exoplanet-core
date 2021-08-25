@@ -4,5 +4,6 @@
 #include "contact_points.h"
 #include "kepler.h"
 #include "limbdark.h"
+#include "s1.h"
 
 #endif

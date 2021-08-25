@@ -24,7 +24,7 @@ namespace kepler {
 // a few machine epsilon) at a signficantly lower cost than the
 // function call to sine that obeys the IEEE standard.
 template <typename Scalar>
-EXOPLANET_INLINE_OR_DEVICE Scalar shortsin(const Scalar &x) {
+EXOPLANET_DEVICE inline Scalar shortsin(const Scalar &x) {
   Scalar x2 = x * x;
   return x *
          (1 - x2 * (if3 -
@@ -34,7 +34,7 @@ EXOPLANET_INLINE_OR_DEVICE Scalar shortsin(const Scalar &x) {
 // Modulo 2pi: works best when you use an increment so that the
 // argument isn't too much larger than 2pi.
 template <typename Scalar>
-EXOPLANET_INLINE_OR_DEVICE Scalar MAmod(const Scalar &M_in) {
+EXOPLANET_DEVICE inline Scalar MAmod(const Scalar &M_in) {
   if (M_in < twopi && M_in >= 0) return M_in;
 
   if (M_in >= twopi) {
@@ -56,7 +56,7 @@ EXOPLANET_INLINE_OR_DEVICE Scalar MAmod(const Scalar &M_in) {
 // (2017) in the singular corner (eccentricity close to 1, mean
 // anomaly close to zero).
 template <typename Scalar>
-EXOPLANET_INLINE_OR_DEVICE Scalar EAstart(const Scalar &M, const Scalar &ecc) {
+EXOPLANET_DEVICE inline Scalar EAstart(const Scalar &M, const Scalar &ecc) {
   const Scalar ome = 1. - ecc;
   const Scalar sqrt_ome = sqrt(ome);
 
@@ -86,8 +86,8 @@ EXOPLANET_INLINE_OR_DEVICE Scalar EAstart(const Scalar &M, const Scalar &ecc) {
 // E-ecc*sin(E)-M at all mean anomalies and at eccentricies up to
 // 0.999999.
 template <typename Scalar>
-EXOPLANET_INLINE_OR_DEVICE void calcEA(const Scalar &M, const Scalar &ecc, Scalar *sinE,
-                                       Scalar *cosE) {
+EXOPLANET_DEVICE inline void calcEA(const Scalar &M, const Scalar &ecc, Scalar *sinE,
+                                    Scalar *cosE) {
   const Scalar g2s_e = 0.2588190451025207623489 * ecc;
   const Scalar g3s_e = 0.5 * ecc;
   const Scalar g4s_e = 0.7071067811865475244008 * ecc;
@@ -208,8 +208,8 @@ EXOPLANET_INLINE_OR_DEVICE void calcEA(const Scalar &M, const Scalar &ecc, Scala
 }
 
 template <typename Scalar>
-EXOPLANET_INLINE_OR_DEVICE void to_f(const Scalar &ecc, const Scalar &ome, Scalar *sinf,
-                                     Scalar *cosf) {
+EXOPLANET_DEVICE inline void to_f(const Scalar &ecc, const Scalar &ome, Scalar *sinf,
+                                  Scalar *cosf) {
   Scalar denom = 1 + (*cosf);
   if (denom > 1.0e-10) {
     Scalar tanf2 = sqrt((1 + ecc) / ome) * (*sinf) / denom;  // tan(0.5*f)
@@ -229,8 +229,8 @@ EXOPLANET_INLINE_OR_DEVICE void to_f(const Scalar &ecc, const Scalar &ome, Scala
 }
 
 template <typename Scalar>
-EXOPLANET_INLINE_OR_DEVICE void solve_kepler(const Scalar &M, const Scalar &ecc, Scalar *sinf,
-                                             Scalar *cosf) {
+EXOPLANET_DEVICE inline void solve_kepler(const Scalar &M, const Scalar &ecc, Scalar *sinf,
+                                          Scalar *cosf) {
   calcEA(M, ecc, sinf, cosf);
   to_f(ecc, 1 - ecc, sinf, cosf);
 }
