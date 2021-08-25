@@ -393,7 +393,7 @@ batching.primitive_batchers[contact_points_prim] = _contact_points_batch
 # * P1 *
 # ******
 def p1(b, r, phi):
-    return p1_prim.bind(*jnp.broadcast_arrays(b, r, phi))
+    return p1_p.bind(*jnp.broadcast_arrays(b, r, phi))
 
 
 p1_dtype_rule = partial(
