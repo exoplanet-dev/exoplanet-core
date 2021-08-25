@@ -414,7 +414,7 @@ def _p1_translation_rule(c, *args):
         for s in map(c.get_shape, args)
     )
     assert len(dtypes) == 1
-    shape, dtype = dtypes[0]
+    shape, dtype = list(dtypes)[0]
     assert dtype in (jnp.float32, jnp.float64)
     N = np.prod(shape).astype(np.int64)
 
