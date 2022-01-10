@@ -5,19 +5,9 @@ import pytest
 
 from exoplanet_core import core
 
-try:
-    import starry
-except ImportError:
-    starry = None
 
-try:
-    import batman
-except ImportError:
-    batman = None
-
-
-@pytest.mark.skipif(starry is None, reason="starry is not installed")
 def test_compare_starry():
+    starry = pytest.importorskip("starry")
     u1 = 0.2
     u2 = 0.3
     b = np.linspace(-1.5, 1.5, 100)
@@ -31,8 +21,8 @@ def test_compare_starry():
     np.testing.assert_allclose(computed, expected, atol=1e-12)
 
 
-@pytest.mark.skipif(batman is None, reason="batman is not installed")
 def test_compare_batman():
+    batman = pytest.importorskip("batman")
     u1 = 0.2
     u2 = 0.3
     b = np.linspace(-1.5, 1.5, 100)
