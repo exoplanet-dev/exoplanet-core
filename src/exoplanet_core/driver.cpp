@@ -1,3 +1,7 @@
+#if defined(_MSC_VER)
+#include <BaseTsd.h>
+#endif
+
 #include <exoplanet/exoplanet.h>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
