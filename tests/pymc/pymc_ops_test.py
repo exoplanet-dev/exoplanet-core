@@ -9,8 +9,10 @@ from exoplanet_core.testing import (
     get_mean_and_true_anomaly,
 )
 
-aesara = pytest.importorskip("aesara_theano_fallback.aesara")
+fallback = pytest.importorskip("aesara_theano_fallback")
 ops = pytest.importorskip("exoplanet_core.pymc.ops")
+
+aesara = fallback.aesara
 
 
 def compare_to_numpy(nop, op, *args):
