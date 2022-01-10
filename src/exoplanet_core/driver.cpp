@@ -1,7 +1,3 @@
-#if defined(_MSC_VER)
-#include <BaseTsd.h>
-#endif
-
 #include <exoplanet/exoplanet.h>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
@@ -18,10 +14,10 @@ struct flat_unchecked_array {
     data = (Scalar *)info.ptr;
   }
 
-  inline Scalar &operator()(ssize_t index) { return data[index]; }
-  inline ssize_t shape(ssize_t index) const { return info.shape[index]; }
-  inline ssize_t size() const { return info.size; }
-  inline ssize_t ndim() const { return info.ndim; }
+  inline Scalar &operator()(py::ssize_t index) { return data[index]; }
+  inline py::ssize_t shape(py::ssize_t index) const { return info.shape[index]; }
+  inline py::ssize_t size() const { return info.size; }
+  inline py::ssize_t ndim() const { return info.ndim; }
 
   py::buffer_info info;
   Scalar *data;
@@ -33,10 +29,10 @@ void solve_kepler(py::array_t<double, py::array::c_style> M_in,
                   py::array_t<double, py::array::c_style> cosf_out) {
   flat_unchecked_array<double, py::array::c_style> M(M_in), ecc(ecc_in);
   flat_unchecked_array<double, py::array::c_style> sinf(sinf_out, true), cosf(cosf_out, true);
-  ssize_t N = M.size();
+  py::ssize_t N = M.size();
   if (ecc.size() != N || cosf.size() != N || sinf.size() != N)
     throw std::invalid_argument("dimension mismatch");
-  for (ssize_t n = 0; n < N; ++n) {
+  for (py::ssize_t n = 0; n < N; ++n) {
     if (ecc(n) < 0 || ecc(n) > 1)
       throw std::invalid_argument("eccentricity must be in the range [0, 1)");
     exoplanet::kepler::solve_kepler(M(n), ecc(n), &(sinf(n)), &(cosf(n)));
@@ -51,9 +47,9 @@ void quad_solution_vector(py::array_t<double, py::array::c_style> b_in,
   flat_unchecked_array<double, py::array::c_style> s(s_out, true);
   const double eps = std::numeric_limits<double>::epsilon();
 
-  ssize_t N = b.size();
+  py::ssize_t N = b.size();
   if (r.size() != N || s.size() != 3 * N) throw std::invalid_argument("dimension mismatch");
-  for (ssize_t n = 0; n < N; ++n) {
+  for (py::ssize_t n = 0; n < N; ++n) {
     exoplanet::limbdark::quad_solution_vector<false>(eps, std::abs(b(n)), r(n), &(s(3 * n)),
                                                      (double *)NULL, (double *)NULL);
   }
@@ -69,11 +65,11 @@ void quad_solution_vector_with_grad(py::array_t<double, py::array::c_style> b_in
   flat_unchecked_array<double, py::array::c_style> s(s_out, true), dsdb(dsdb_out, true),
       dsdr(dsdr_out, true);
   const double eps = std::numeric_limits<double>::epsilon();
-  ssize_t N = b.size();
+  py::ssize_t N = b.size();
   if (r.size() != N || s.size() != 3 * N || dsdb.size() != 3 * N || dsdr.size() != 3 * N)
     throw std::invalid_argument("dimension mismatch");
-  for (ssize_t n = 0; n < N; ++n) {
-    ssize_t ind = 3 * n;
+  for (py::ssize_t n = 0; n < N; ++n) {
+    py::ssize_t ind = 3 * n;
     int sgn = exoplanet::sgn(b(n));
     exoplanet::limbdark::quad_solution_vector<true>(eps, std::abs(b(n)), r(n), &(s(ind)),
                                                     &(dsdb(ind)), &(dsdr(ind)));
@@ -100,12 +96,12 @@ void contact_points(py::array_t<double, py::array::c_style> a_in,
   flat_unchecked_array<double, py::array::c_style> M_left(M_left_out, true),
       M_right(M_right_out, true);
   flat_unchecked_array<int, py::array::c_style> flag(flag_out, true);
-  ssize_t N = a.size();
+  py::ssize_t N = a.size();
   if (e.size() != N || cosw.size() != N || sinw.size() != N || cosi.size() != N ||
       sini.size() != N || L.size() != N || M_left.size() != N || M_right.size() != N ||
       flag.size() != N)
     throw std::invalid_argument("dimension mismatch");
-  for (ssize_t n = 0; n < N; ++n) {
+  for (py::ssize_t n = 0; n < N; ++n) {
     auto const solver = exoplanet::contact_points::ContactPointSolver<double>(
         a(n), e(n), cosw(n), sinw(n), cosi(n), sini(n));
     auto const roots = solver.find_roots(L(n), tol);
