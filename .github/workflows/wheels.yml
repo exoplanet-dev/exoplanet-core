@@ -2,6 +2,8 @@ name: Wheels
 on:
   release:
     types: [published]
+  push:
+    branches: [py310]
 
 jobs:
   build_wheels:
