@@ -41,16 +41,21 @@ def test_kepler(kepler_data):
 
 
 def test_kepler_grad(kepler_data):
+    try:
+        verify_grad = aesara.tensor.verify_grad
+    except AttributeError:
+        from aesara.gradient import verify_grad
+
     M, e, f = kepler_data
     np.random.seed(1324)
     ind = 100
-    aesara.tensor.verify_grad(
+    verify_grad(
         lambda *x: ops.kepler(*x)[0],
         [M[:, ind], e[:, ind]],
         rng=np.random,
         eps=1e-8,
     )
-    aesara.tensor.verify_grad(
+    verify_grad(
         lambda *x: ops.kepler(*x)[1],
         [M[:, ind], e[:, ind]],
         rng=np.random,
@@ -73,6 +78,11 @@ def test_quad_solution_vector(limbdark_data):
 
 
 def test_quad_solution_vector_grad(limbdark_data):
+    try:
+        verify_grad = aesara.tensor.verify_grad
+    except AttributeError:
+        from aesara.gradient import verify_grad
+
     # The numerical estimate is bad at discontinuities
     eps = 1e-7
     b, r = limbdark_data
@@ -80,9 +90,7 @@ def test_quad_solution_vector_grad(limbdark_data):
     m &= np.abs(np.abs(b) - (1 - r)) > 2 * eps
     m &= np.abs(np.abs(b) - (1 + r)) > 2 * eps
 
-    aesara.tensor.verify_grad(
-        ops.quad_solution_vector, (b[m], r[m]), rng=np.random, eps=eps
-    )
+    verify_grad(ops.quad_solution_vector, (b[m], r[m]), rng=np.random, eps=eps)
 
 
 @pytest.mark.parametrize("a", [5.0, 12.1234, 20000.0])
