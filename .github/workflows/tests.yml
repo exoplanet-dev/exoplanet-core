@@ -19,7 +19,7 @@ jobs:
           - "jax jaxlib"
           - 'pymc3 "numpy<1.22" aesara-theano-fallback'
           - '"https://github.com/pymc-devs/pymc/archive/v3.zip" "numpy<1.22" aesara-theano-fallback'
-          - '"https://github.com/pymc-devs/pymc/archive/main.zip" aesara-theano-fallback'
+          # - '"https://github.com/pymc-devs/pymc/archive/main.zip" aesara-theano-fallback'
         include:
           - os: "windows-latest"
             python-version: "3.10"
