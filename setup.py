@@ -117,12 +117,14 @@ ext_modules = [
         ["src/exoplanet_core/driver.cpp"],
         include_dirs=include_dirs,
         language="c++",
+        extra_compile_args=["-O3", "-ffast-math"],
     ),
     Pybind11Extension(
         "exoplanet_core.jax.cpu_driver",
         ["src/exoplanet_core/jax/cpu_driver.cpp"],
         include_dirs=include_dirs + ["src/exoplanet_core/jax"],
         language="c++",
+        extra_compile_args=["-O3", "-ffast-math"],
     ),
 ]
 

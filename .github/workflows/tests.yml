@@ -12,13 +12,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.9"]
+        python-version: ["3.9", "3.10"]
         os: ["ubuntu-latest"]
         extras:
           - "jax jaxlib"
-          - 'aesara-theano-fallback "pymc3~=3.9.0" "arviz<0.11"'
-          - 'aesara-theano-fallback "pymc3~=3.10.0" "arviz<0.11"'
-          - 'aesara-theano-fallback "pymc3~=3.11.0"'
+          - "aesara-theano-fallback pymc3"
+          - 'aesara-theano-fallback "pymc==4.0.0b1"'
           - 'aesara-theano-fallback "https://github.com/pymc-devs/pymc3/archive/v3.zip"'
         include:
           - os: "windows-latest"
@@ -51,45 +50,3 @@ jobs:
 
       - name: Run tests
         run: python -m pytest -v tests
-
-  benchmarks:
-    name: Benchmark ops
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-
-      - uses: actions/setup-python@v2
-        name: Install Python
-        with:
-          python-version: 3.9
-
-      - name: Install dependencies
-        run: |
-          python -m pip install -U pip
-          python -m pip install cython h5py
-          python -m pip install -e .[benchmark]
-
-      - name: Get dependency versions
-        run: |
-          python -c 'import radvel;print(radvel.__version__)'
-          python -c 'import batman;print(batman.__version__)'
-          python -c 'import starry;print(starry.__version__)'
-          python -c 'import kepler;print(kepler.__version__)'
-
-      - name: Run tests
-        run: python -m pytest -v tests/benchmark.py --benchmark-json benchmark.json
-
-      - name: Store benchmark result
-        uses: rhysd/github-action-benchmark@v1
-        with:
-          name: Op performance
-          tool: "pytest"
-          output-file-path: benchmark.json
-          github-token: ${{ secrets.PERSONAL_GITHUB_TOKEN }}
-          auto-push: true
-          alert-threshold: "200%"
-          comment-on-alert: true
-          fail-on-alert: true
-          alert-comment-cc-users: "@dfm"
