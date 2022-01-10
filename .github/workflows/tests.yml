@@ -16,9 +16,9 @@ jobs:
         os: ["ubuntu-latest"]
         extras:
           - "jax jaxlib"
-          - "numpy<1.22 aesara-theano-fallback pymc3"
+          - '"numpy<1.22" aesara-theano-fallback pymc3'
           - 'aesara-theano-fallback "pymc==4.0.0b1"'
-          - 'numpy<1.22 aesara-theano-fallback "https://github.com/pymc-devs/pymc/archive/v3.zip"'
+          - '"numpy<1.22" aesara-theano-fallback "https://github.com/pymc-devs/pymc/archive/v3.zip"'
           - 'aesara-theano-fallback "https://github.com/pymc-devs/pymc/archive/main.zip"'
         include:
           - os: "windows-latest"
