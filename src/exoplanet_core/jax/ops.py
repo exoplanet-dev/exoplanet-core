@@ -125,12 +125,12 @@ def _kepler_jvp(args, tangents):
 
     # Pre-compute some things
     ecosf = e * cosf
-    ome2 = 1 - e ** 2
+    ome2 = 1 - e**2
 
     # Propagate the derivatives
     df = 0.0
     if type(dM) is not ad.Zero:
-        df += dM * (1 + ecosf) ** 2 / ome2 ** 1.5
+        df += dM * (1 + ecosf) ** 2 / ome2**1.5
     if type(de) is not ad.Zero:
         df += de * (2 + ecosf) * sinf / ome2
 

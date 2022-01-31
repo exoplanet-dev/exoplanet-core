@@ -80,8 +80,8 @@ class Kepler(op.Op):
         sinf, cosf = self(M, e)
 
         ecosf = e * cosf
-        ome2 = 1 - e ** 2
-        dfdM = (1 + ecosf) ** 2 / ome2 ** 1.5
+        ome2 = 1 - e**2
+        dfdM = (1 + ecosf) ** 2 / ome2**1.5
         dfde = (2 + ecosf) * sinf / ome2
 
         bM = tt.zeros_like(M)
