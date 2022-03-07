@@ -26,7 +26,7 @@ jobs:
             extras: 'pymc3 "numpy<1.22" aesara-theano-fallback'
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
