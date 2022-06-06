@@ -1,7 +1,7 @@
 from aesara.link.jax.dispatch import jax_funcify
 
-from exoplanet_core.pymc4 import ops as pymc4_ops
 from exoplanet_core.jax import ops as jax_ops
+from exoplanet_core.pymc4 import ops as pymc4_ops
 
 
 @jax_funcify.register(pymc4_ops.Kepler)
