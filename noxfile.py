@@ -43,7 +43,7 @@ def test_pymc4_jax(session):
 @nox.session(python=ALL_PYTHON_VS)
 def test_jax(session):
     session.install(".[test,jax]")
-    session.run("python", "-c", "'import jax'")
+    session.run("python", "-c", "import jax")
     session.run("python", "-c", "import exoplanet_core.jax.ops")
     session.run("pytest", "-v", "tests/jax_test.py", *session.posargs)
 
@@ -51,7 +51,7 @@ def test_jax(session):
 @nox.session(python=ALL_PYTHON_VS)
 def test_all(session):
     session.install(".[test,pymc3,pymc4,jax,comparison]")
-    session.run("python", "-c", "'import jax'")
-    session.run("python", "-c", "'import aesara'")
-    session.run("python", "-c", "'import theano'")
+    session.run("python", "-c", "import jax")
+    session.run("python", "-c", "import aesara")
+    session.run("python", "-c", "import theano")
     session.run("pytest", "-v", "tests", *session.posargs)
