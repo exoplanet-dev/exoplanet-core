@@ -3,7 +3,6 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
   release:
     types:
       - published
@@ -11,7 +10,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-18.04
-    container: nvidia/cuda:10.2-devel-ubuntu18.04
+    container: nvidia/cuda:11.4.2-cudnn8-devel-ubuntu18.04
 
     steps:
       - name: Install wget
@@ -31,7 +30,7 @@ jobs:
 
       - uses: actions/setup-python@v3
         with:
-          python-version: 3.8
+          python-version: 3.10
 
       - name: Install Python dependencies
         run: |

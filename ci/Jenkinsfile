@@ -18,7 +18,7 @@ pipeline {
       }
       steps {
         sh 'EXOPLANET_CORE_CUDA=yes python3 -m pip install --user .'
-        sh 'python3 -m pytest -v tests/jax'
+        sh 'python3 -m pytest -v tests/jax_test.py'
       }
     }
   }
