@@ -4,9 +4,9 @@ __all__ = ["kepler", "quad_solution_vector", "contact_points"]
 
 from itertools import chain
 
-import numpy as np
 import aesara
 import aesara.tensor as at
+import numpy as np
 from aesara.graph import basic, op
 
 from .. import driver
