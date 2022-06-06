@@ -9,10 +9,8 @@ from exoplanet_core.testing import (
     get_mean_and_true_anomaly,
 )
 
-fallback = pytest.importorskip("aesara_theano_fallback")
-ops = pytest.importorskip("exoplanet_core.pymc.ops")
-
-aesara = fallback.aesara
+aesara = pytest.importorskip("aesara")
+ops = pytest.importorskip("exoplanet_core.pymc4.ops")
 
 
 def compare_to_numpy(nop, op, *args):
@@ -71,8 +69,8 @@ def limbdark_data():
 
 
 def test_quad_solution_vector(limbdark_data):
-    b_ = aesara.tensor.dmatrix()
-    r_ = aesara.tensor.dmatrix()
+    b_ = aesara.tensor.matrix()
+    r_ = aesara.tensor.matrix()
     func = aesara.function([b_, r_], ops.quad_solution_vector(b_, r_))
     compare_to_numpy(nops.quad_solution_vector, func, *limbdark_data)
 
@@ -96,7 +94,7 @@ def test_quad_solution_vector_grad(limbdark_data):
 @pytest.mark.parametrize("a", [5.0, 12.1234, 20000.0])
 @pytest.mark.parametrize("L", [0.7, 1.0, 1.5])
 def test_contact_points(a, L):
-    args = [aesara.tensor.dscalar() for _ in range(7)]
+    args = [aesara.tensor.scalar() for _ in range(7)]
     func = aesara.function(args, ops.contact_points(*args))
 
     es = np.linspace(0, 1, 25)[:-1]

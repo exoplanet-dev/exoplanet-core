@@ -30,9 +30,11 @@ CLASSIFIERS = [
 ]
 INSTALL_REQUIRES = ["numpy>=1.13.0"]
 EXTRA_REQUIRE = {
-    "pymc": ["pymc3>=3.9", "aesara-theano-fallback>=0.0.2"],
+    "pymc3": ["pymc3>=3.9", "numpy<1.22"],
+    "pymc4": ["pymc>=4.0.0"],
     "jax": ["jax", "jaxlib"],
-    "test": ["pytest", "pytest-cov>=2.6.1"],
+    "test": ["pytest"],
+    "comparison": ["batman-package", "starry", "numpy<1.22"],
     "benchmark": [
         "pytest",
         "pytest-benchmark",

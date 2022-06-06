@@ -1,19 +1,19 @@
 # -*- coding: utf-8 -*-
 
-__all__ = ["kepler", "quad_solution_vector"]
+__all__ = ["kepler", "quad_solution_vector", "contact_points"]
 
 from itertools import chain
 
-import aesara_theano_fallback.tensor as tt
 import numpy as np
-from aesara_theano_fallback import aesara
-from aesara_theano_fallback.graph import basic, op
+import aesara
+import aesara.tensor as at
+from aesara.graph import basic, op
 
 from .. import driver
 
 
 def as_tensor_variable(x, dtype="float64", **kwargs):
-    t = tt.as_tensor_variable(x, **kwargs)
+    t = at.as_tensor_variable(x, **kwargs)
     if dtype is None:
         return t
     return t.astype(dtype)
@@ -84,8 +84,8 @@ class Kepler(op.Op):
         dfdM = (1 + ecosf) ** 2 / ome2**1.5
         dfde = (2 + ecosf) * sinf / ome2
 
-        bM = tt.zeros_like(M)
-        be = tt.zeros_like(M)
+        bM = at.zeros_like(M)
+        be = at.zeros_like(M)
         if not isinstance(gradients[0].type, aesara.gradient.DisconnectedType):
             bM += gradients[0] * cosf * dfdM
             be += gradients[0] * cosf * dfde
@@ -137,7 +137,7 @@ class QuadSolutionVector(op.Op):
             raise ValueError("float64 precision is required")
         x = in_args[0]
         o = [
-            tt.tensor(
+            at.tensor(
                 broadcastable=tuple(x.broadcastable) + (False,),
                 dtype=x.dtype,
             )
@@ -175,7 +175,7 @@ class QuadSolutionVector(op.Op):
                 aesara.gradient.DisconnectedType()(),
             ]
 
-        return [tt.sum(bs * dsdb, axis=-1), tt.sum(bs * dsdr, axis=-1)]
+        return [at.sum(bs * dsdb, axis=-1), at.sum(bs * dsdr, axis=-1)]
 
     def R_op(self, inputs, eval_points):
         if eval_points[0] is None:
@@ -205,7 +205,7 @@ class ContactPoints(op.Op):
         out_args = [
             in_args[0].type(),
             in_args[0].type(),
-            tt.tensor(
+            at.tensor(
                 broadcastable=tuple(in_args[0].broadcastable),
                 dtype="int32",
             ),
