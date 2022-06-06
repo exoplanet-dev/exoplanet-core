@@ -37,3 +37,9 @@ def test_pymc4_jax(session):
 def test_jax(session):
     session.install(".[test,jax]")
     session.run("pytest", "-v", "tests/jax_test.py", *session.posargs)
+
+
+@nox.session(python=ALL_PYTHON_VS)
+def test_all(session):
+    session.install(".[test,pymc3,pymc4,jax,comparison]")
+    session.run("pytest", "-v", "tests", *session.posargs)
