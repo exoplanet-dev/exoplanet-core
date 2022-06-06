@@ -9,6 +9,8 @@ RUN apt-get update && \
   apt-get autoclean -y && \
   rm -rf /var/cache/apt/* /var/lib/apt/lists/*
 
+RUN nvcc --version
+
 RUN python3 -m pip install -U pip && \
   python3 -m pip install pytest && \
-  python3 -m pip install -U "jax[cuda11_cudnn82]" -f https://storage.googleapis.com/jax-releases/jax_releases.html
+  python3 -m pip install -U "jax==0.3.8" "jaxlib==0.3.8+cuda11.cudnn82" -f https://storage.googleapis.com/jax-releases/jax_releases.html
