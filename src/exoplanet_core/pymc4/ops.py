@@ -9,7 +9,7 @@ import aesara.tensor as at
 import numpy as np
 from aesara.graph import basic, op
 
-from .. import driver
+from exoplanet_core import driver
 
 
 def as_tensor_variable(x, dtype="float64", **kwargs):

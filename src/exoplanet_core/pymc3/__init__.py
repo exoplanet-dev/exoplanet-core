@@ -22,4 +22,4 @@ def __set_compiler_flags():
 __set_compiler_flags()
 
 
-from . import ops
+from exoplanet_core.pymc3 import ops

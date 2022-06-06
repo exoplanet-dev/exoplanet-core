@@ -2,4 +2,4 @@
 
 __all__ = ["ops"]
 
-from . import ops
+from exoplanet_core.numpy import ops

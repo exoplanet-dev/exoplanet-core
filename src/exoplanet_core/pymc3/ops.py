@@ -9,7 +9,7 @@ import theano
 import theano.tensor as tt
 from theano.graph import basic, op
 
-from .. import driver
+from exoplanet_core import driver
 
 
 def as_tensor_variable(x, dtype="float64", **kwargs):

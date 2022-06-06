@@ -4,7 +4,7 @@ __all__ = ["get_mean_and_true_anomaly", "check_contact_points"]
 
 import numpy as np
 
-from .numpy.ops import kepler
+from exoplanet_core.numpy.ops import kepler
 
 
 def get_mean_and_true_anomaly(eccentricity, eccentric_anomaly):
