@@ -20,4 +20,4 @@ if not config.read("jax_enable_x64"):
 
 __all__ = ["ops"]
 
-from . import ops  # noqa isort:skip
+from exoplanet_core.jax import ops  # noqa isort:skip

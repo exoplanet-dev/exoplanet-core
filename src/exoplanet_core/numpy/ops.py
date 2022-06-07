@@ -5,7 +5,7 @@ __all__ = ["kepler", "quad_solution_vector", "contact_points"]
 
 import numpy as np
 
-from .. import driver
+from exoplanet_core import driver
 
 
 def kepler(mean_anomaly, eccentricity):

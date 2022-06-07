@@ -4,7 +4,7 @@ __all__ = ["quad_limbdark_light_curve", "kepler"]
 
 import numpy as np
 
-from .numpy import ops
+from exoplanet_core.numpy import ops
 
 
 def get_cl(u1, u2):

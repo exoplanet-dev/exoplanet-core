@@ -4,7 +4,6 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
 
 jobs:
   tests:
@@ -12,18 +11,25 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.9", "3.10"]
+        python-version: ["3.10"]
         os: ["ubuntu-latest"]
-        extras:
-          - 'starry batman-package "numpy<1.22"'
-          - "jax jaxlib"
-          - 'pymc3 "numpy<1.22" aesara-theano-fallback'
-          - '"https://github.com/pymc-devs/pymc/archive/v3.zip" "numpy<1.22" aesara-theano-fallback'
-          - '"https://github.com/pymc-devs/pymc/archive/main.zip" aesara-theano-fallback'
+        session:
+          - "test"
+          - "test_comparison"
+          - "test_pymc3"
+          - "test_pymc4"
+          - "test_pymc4_jax"
+          - "test_jax"
         include:
+          - os: "ubuntu-latest"
+            python-version: "3.9"
+            session: "test_all"
+          - os: "macos-latest"
+            python-version: "3.9"
+            session: "test_all"
           - os: "macos-latest"
             python-version: "3.10"
-            extras: 'pymc3 "numpy<1.22" aesara-theano-fallback'
+            session: "test_all"
 
     steps:
       - uses: actions/checkout@v3
@@ -38,8 +44,9 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install -U pip
-          python -m pip install ${{ matrix.extras }}
-          python -m pip install -e .[test]
+          python -m pip install -U nox
 
       - name: Run tests
-        run: python -m pytest -v tests
+        run: |
+          python -m nox --non-interactive --error-on-missing-interpreter \
+            --session ${{ matrix.session }}-${{ matrix.python-version }}

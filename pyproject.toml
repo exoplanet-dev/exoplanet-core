@@ -1,5 +1,12 @@
 [build-system]
-requires = ["setuptools>=42", "wheel", "setuptools_scm[toml]>=3.4", "numpy>=1.13.0", "pybind11>=2.6", "cmake"]
+requires = [
+  "setuptools>=42",
+  "wheel",
+  "setuptools_scm[toml]>=3.4",
+  "numpy>=1.13.0",
+  "pybind11>=2.6",
+  "cmake",
+]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
@@ -7,21 +14,6 @@ write_to = "src/exoplanet_core/exoplanet_core_version.py"
 
 [tool.black]
 line-length = 79
-exclude = '''
-/(
-    \.eggs
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | _build
-  | buck-out
-  | build
-  | dist
-  | docs/tutorials
-)/
-'''
 
 [tool.isort]
 skip_glob = []
@@ -30,4 +22,3 @@ multi_line_output = 3
 include_trailing_comma = true
 force_grid_wrap = 0
 use_parentheses = true
-known_third_party = ["astropy", "corner", "jupytext", "matplotlib", "nbconvert", "nbformat", "numpy", "packaging", "pandas", "pkg_resources", "pymc3", "pytest", "requests", "scipy", "setuptools", "sphinx_typlog_theme", "theano"]

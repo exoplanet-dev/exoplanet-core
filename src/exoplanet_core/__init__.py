@@ -2,8 +2,8 @@
 
 __all__ = ["__version__", "quad_limbdark_light_curve", "kepler"]
 
-from .core import kepler, quad_limbdark_light_curve
-from .exoplanet_core_version import version as __version__
+from exoplanet_core.core import kepler, quad_limbdark_light_curve
+from exoplanet_core.exoplanet_core_version import version as __version__
 
 __uri__ = "https://docs.exoplanet.codes"
 __author__ = "Daniel Foreman-Mackey"
