@@ -4,6 +4,7 @@ RUN apt-get update && \
   DEBIAN_FRONTEND=noninteractive apt-get install -y \
   git \
   python3-pip \
+  cmake \
   && \
   apt-get autoremove --purge -y && \
   apt-get autoclean -y && \
