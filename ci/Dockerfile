@@ -1,4 +1,4 @@
-FROM nvidia/cuda:11.4.2-cudnn8-devel-ubuntu20.04
+FROM nvidia/cuda:11.7.1-cudnn8-devel-ubuntu22.04
 
 RUN apt-get update && \
   DEBIAN_FRONTEND=noninteractive apt-get install -y \
@@ -12,5 +12,5 @@ RUN apt-get update && \
 RUN nvcc --version
 
 RUN python3 -m pip install -U pip && \
-  python3 -m pip install pytest && \
-  python3 -m pip install -U "jax[cuda]" -f https://storage.googleapis.com/jax-releases/jax_releases.html
+  python3 -m pip install -U pytest && \
+  python3 -m pip install -U "jax[cuda]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
