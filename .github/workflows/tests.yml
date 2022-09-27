@@ -20,16 +20,6 @@ jobs:
           - "test_pymc4"
           - "test_pymc4_jax"
           - "test_jax"
-        include:
-          - os: "ubuntu-latest"
-            python-version: "3.9"
-            session: "test_all"
-          - os: "macos-latest"
-            python-version: "3.9"
-            session: "test_all"
-          - os: "macos-latest"
-            python-version: "3.10"
-            session: "test_all"
 
     steps:
       - uses: actions/checkout@v3
