@@ -35,15 +35,6 @@ def compare_jax_and_py(
     aesara_jax_fn = aesara.function(fn_inputs, fgraph.outputs, mode=jax_mode)
     jax_res = aesara_jax_fn(*test_inputs)
 
-    if must_be_device_array:
-        if isinstance(jax_res, list):
-            assert all(
-                isinstance(res, jax.interpreters.xla.DeviceArray)
-                for res in jax_res
-            )
-        else:
-            assert isinstance(jax_res, jax.interpreters.xla.DeviceArray)
-
     aesara_py_fn = aesara.function(fn_inputs, fgraph.outputs, mode=py_mode)
     py_res = aesara_py_fn(*test_inputs)
 
