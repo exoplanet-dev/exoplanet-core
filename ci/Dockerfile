@@ -14,4 +14,4 @@ RUN nvcc --version
 
 RUN python3 -m pip install -U pip && \
   python3 -m pip install -U pytest && \
-  python3 -m pip install -U "jax[cuda]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
+  python3 -m pip install -U "jax[cuda11_pip]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
