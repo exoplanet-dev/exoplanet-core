@@ -138,6 +138,8 @@ class QuadSolutionVector(op.Op):
         x = in_args[0]
         o = [
             pt.tensor(
+                # NOTE: Changed broadcastable to shape because it caused deprecation warning,
+                # BUT this might change again in the future: https://github.com/pymc-devs/pytensor/issues/408
                 shape=tuple(x.broadcastable) + (False,),
                 dtype=x.dtype,
             )
@@ -206,7 +208,9 @@ class ContactPoints(op.Op):
             in_args[0].type(),
             in_args[0].type(),
             pt.tensor(
-                broadcastable=tuple(in_args[0].broadcastable),
+                # NOTE: Changed broadcastable to shape because it caused deprecation warning,
+                # BUT this might change again in the future: https://github.com/pymc-devs/pytensor/issues/408
+                shape=tuple(in_args[0].broadcastable),
                 dtype="int32",
             ),
         ]
