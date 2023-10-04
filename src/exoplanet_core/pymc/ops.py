@@ -4,9 +4,9 @@ __all__ = ["kepler", "quad_solution_vector", "contact_points"]
 
 from itertools import chain
 
+import numpy as np
 import pytensor
 import pytensor.tensor as pt
-import numpy as np
 from pytensor.graph import basic, op
 
 from exoplanet_core import driver
@@ -86,11 +86,15 @@ class Kepler(op.Op):
 
         bM = pt.zeros_like(M)
         be = pt.zeros_like(M)
-        if not isinstance(gradients[0].type, pytensor.gradient.DisconnectedType):
+        if not isinstance(
+            gradients[0].type, pytensor.gradient.DisconnectedType
+        ):
             bM += gradients[0] * cosf * dfdM
             be += gradients[0] * cosf * dfde
 
-        if not isinstance(gradients[1].type, pytensor.gradient.DisconnectedType):
+        if not isinstance(
+            gradients[1].type, pytensor.gradient.DisconnectedType
+        ):
             bM -= gradients[1] * sinf * dfdM
             be -= gradients[1] * sinf * dfde
 
