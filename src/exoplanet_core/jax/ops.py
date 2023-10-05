@@ -7,7 +7,7 @@ from functools import partial
 import numpy as np
 from jax import core
 from jax import numpy as jnp
-from jax.abstract_arrays import ShapedArray
+from jax.core import ShapedArray
 from jax.interpreters import ad, batching, xla
 from jax.lib import xla_client
 
@@ -16,7 +16,7 @@ from exoplanet_core.jax import cpu_driver
 xops = xla_client.ops
 
 for _name, _value in cpu_driver.registrations().items():
-    xla_client.register_cpu_custom_call_target(_name, _value)
+    xla_client.register_custom_call_target(_name, _value, platform="cpu")
 
 
 try:
