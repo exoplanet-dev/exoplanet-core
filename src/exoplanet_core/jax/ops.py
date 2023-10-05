@@ -16,7 +16,7 @@ from exoplanet_core.jax import cpu_driver
 xops = xla_client.ops
 
 for _name, _value in cpu_driver.registrations().items():
-    xla_client.register_cpu_custom_call_target(_name, _value)
+    xla_client.register_custom_call_target(_name, _value, platform="cpu")
 
 
 try:
