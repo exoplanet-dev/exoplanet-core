@@ -7,7 +7,7 @@ from functools import partial
 import numpy as np
 from jax import core
 from jax import numpy as jnp
-from jax.abstract_arrays import ShapedArray
+from jax.core import ShapedArray
 from jax.interpreters import ad, batching, xla
 from jax.lib import xla_client
 
