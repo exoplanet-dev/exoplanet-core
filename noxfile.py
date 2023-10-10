@@ -1,6 +1,6 @@
 import nox
 
-ALL_PYTHON_VS = ["3.8", "3.9", "3.10"]
+ALL_PYTHON_VS = ["3.9", "3.10", "3.11"]
 
 
 @nox.session(python=ALL_PYTHON_VS)
@@ -24,20 +24,20 @@ def test_pymc3(session):
 
 
 @nox.session(python=ALL_PYTHON_VS)
-def test_pymc4(session):
-    session.install(".[test,pymc4]")
-    session.run("python", "-c", "import aesara")
-    session.run("python", "-c", "import exoplanet_core.pymc4.ops")
-    session.run("pytest", "-v", "tests/pymc4_test.py", *session.posargs)
+def test_pymc(session):
+    session.install(".[test,pymc]")
+    session.run("python", "-c", "import pytensor")
+    session.run("python", "-c", "import exoplanet_core.pymc.ops")
+    session.run("pytest", "-v", "tests/pymc_test.py", *session.posargs)
 
 
 @nox.session(python=ALL_PYTHON_VS)
-def test_pymc4_jax(session):
-    session.install(".[test,pymc4,jax]")
+def test_pymc_jax(session):
+    session.install(".[test,pymc,jax]")
     session.run("python", "-c", "import jax")
-    session.run("python", "-c", "import aesara")
-    session.run("python", "-c", "import exoplanet_core.pymc4.ops")
-    session.run("pytest", "-v", "tests/pymc4_jax_test.py", *session.posargs)
+    session.run("python", "-c", "import pytensor")
+    session.run("python", "-c", "import exoplanet_core.pymc.ops")
+    session.run("pytest", "-v", "tests/pymc_jax_test.py", *session.posargs)
 
 
 @nox.session(python=ALL_PYTHON_VS)

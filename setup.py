@@ -31,7 +31,6 @@ CLASSIFIERS = [
 INSTALL_REQUIRES = ["numpy>=1.13.0"]
 EXTRA_REQUIRE = {
     "pymc3": ["pymc3>=3.9", "numpy<1.22"],
-    "pymc4": ["pymc>=4.0.0,<5"],
     "pymc": ["pymc>=5.0.0"],
     "jax": ["jax", "jaxlib"],
     "test": ["pytest"],
