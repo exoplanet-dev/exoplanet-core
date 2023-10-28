@@ -141,9 +141,12 @@ class QuadSolutionVector(op.Op):
             raise ValueError("float64 precision is required")
         x = in_args[0]
         o = [
+            # NOTE: Changed arg broadcastable to shape because of deprecation warning,
+            # BUT this might change again in the future: https://github.com/pymc-devs/pytensor/issues/408
+            # The other option is to use `x.type.shape + (3,)`
+            # Ref: https://pytensor.readthedocs.io/en/latest/library/tensor/basic.html#pytensor.tensor.TensorType
             pt.tensor(
-                # NOTE: Changed broadcastable to shape because it caused deprecation warning,
-                # BUT this might change again in the future: https://github.com/pymc-devs/pytensor/issues/408
+                # PyTensor internally converts True to None and False to 1
                 shape=tuple(x.broadcastable) + (False,),
                 dtype=x.dtype,
             )
@@ -211,9 +214,12 @@ class ContactPoints(op.Op):
         out_args = [
             in_args[0].type(),
             in_args[0].type(),
+            # NOTE: Changed arg broadcastable to shape because of deprecation warning,
+            # BUT this might change again in the future: https://github.com/pymc-devs/pytensor/issues/408
+            # The other option is to use `in_args[0].type.shape`
+            # Ref: https://pytensor.readthedocs.io/en/latest/library/tensor/basic.html#pytensor.tensor.TensorType
             pt.tensor(
-                # NOTE: Changed broadcastable to shape because it caused deprecation warning,
-                # BUT this might change again in the future: https://github.com/pymc-devs/pytensor/issues/408
+                # PyTensor internally converts True to None and False to 1
                 shape=tuple(in_args[0].broadcastable),
                 dtype="int32",
             ),
