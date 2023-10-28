@@ -50,7 +50,7 @@ def test_jax(session):
 
 @nox.session(python=ALL_PYTHON_VS)
 def test_all(session):
-    session.install(".[test,pymc3,pymc4,jax,comparison]")
+    session.install(".[test,pymc3,pymc,jax,comparison]")
     session.run("python", "-c", "import jax")
     session.run("python", "-c", "import aesara")
     session.run("python", "-c", "import theano")
