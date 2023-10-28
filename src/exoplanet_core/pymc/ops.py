@@ -146,7 +146,7 @@ class QuadSolutionVector(op.Op):
             # The other option is to use `x.type.shape + (3,)`
             # Ref: https://pytensor.readthedocs.io/en/latest/library/tensor/basic.html#pytensor.tensor.TensorType
             pt.tensor(
-                # PyTensor internally converts True to None and False to 1
+                # PyTensor internally converts True to 1 and False to None
                 shape=tuple(x.broadcastable) + (False,),
                 dtype=x.dtype,
             )
@@ -219,7 +219,7 @@ class ContactPoints(op.Op):
             # The other option is to use `in_args[0].type.shape`
             # Ref: https://pytensor.readthedocs.io/en/latest/library/tensor/basic.html#pytensor.tensor.TensorType
             pt.tensor(
-                # PyTensor internally converts True to None and False to 1
+                # PyTensor internally converts True to 1 and False to None
                 shape=tuple(in_args[0].broadcastable),
                 dtype="int32",
             ),
