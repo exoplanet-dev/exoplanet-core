@@ -34,7 +34,12 @@ EXTRA_REQUIRE = {
     "pymc": ["pymc>=5.0.0"],
     "jax": ["jax", "jaxlib"],
     "test": ["pytest"],
-    "comparison": ["batman-package", "starry", "numpy<1.22", "xarray<=2023.10.0"],
+    "comparison": [
+        "batman-package",
+        "starry",
+        "numpy<1.22",
+        "xarray<=2023.10.0",
+    ],
     "benchmark": [
         "pytest",
         "pytest-benchmark",
