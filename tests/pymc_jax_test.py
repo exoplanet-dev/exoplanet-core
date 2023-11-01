@@ -6,21 +6,23 @@ import pytest
 from exoplanet_core.testing import get_mean_and_true_anomaly
 
 jax = pytest.importorskip("jax")
-aesara = pytest.importorskip("aesara")
-ops = pytest.importorskip("exoplanet_core.pymc4.ops")
+pytensor = pytest.importorskip("pytensor")
+ops = pytest.importorskip("exoplanet_core.pymc.ops")
 
 
 try:
-    import aesara.tensor as at
-    from aesara.compile.mode import Mode
-    from aesara.compile.sharedvalue import SharedVariable
-    from aesara.graph.fg import FunctionGraph
-    from aesara.graph.optdb import OptimizationQuery
-    from aesara.link.jax import JAXLinker
+    import pytensor.tensor as at
+    from pytensor.compile.mode import Mode
+    from pytensor.compile.sharedvalue import SharedVariable
+    from pytensor.graph.fg import FunctionGraph
+    from pytensor.graph.rewriting.db import RewriteDatabaseQuery
+    from pytensor.link.jax import JAXLinker
 except ImportError:
     pass
 else:
-    opts = OptimizationQuery(include=[None], exclude=["cxx_only", "BlasOpt"])
+    opts = RewriteDatabaseQuery(
+        include=[None], exclude=["cxx_only", "BlasOpt"]
+    )
     jax_mode = Mode(JAXLinker(), opts)
     py_mode = Mode("py", opts)
 
@@ -32,11 +34,13 @@ def compare_jax_and_py(
         assert_fn = partial(np.testing.assert_allclose, rtol=1e-4)
 
     fn_inputs = [i for i in fgraph.inputs if not isinstance(i, SharedVariable)]
-    aesara_jax_fn = aesara.function(fn_inputs, fgraph.outputs, mode=jax_mode)
-    jax_res = aesara_jax_fn(*test_inputs)
+    pytensor_jax_fn = pytensor.function(
+        fn_inputs, fgraph.outputs, mode=jax_mode
+    )
+    jax_res = pytensor_jax_fn(*test_inputs)
 
-    aesara_py_fn = aesara.function(fn_inputs, fgraph.outputs, mode=py_mode)
-    py_res = aesara_py_fn(*test_inputs)
+    pytensor_py_fn = pytensor.function(fn_inputs, fgraph.outputs, mode=py_mode)
+    py_res = pytensor_py_fn(*test_inputs)
 
     if len(fgraph.outputs) > 1:
         for j, p in zip(jax_res, py_res):
@@ -59,10 +63,10 @@ def kepler_data():
 
 def test_kepler(kepler_data):
     M = at.tensor(
-        dtype=aesara.config.floatX, shape=[False] * kepler_data[0].ndim
+        dtype=pytensor.config.floatX, shape=[False] * kepler_data[0].ndim
     )
     e = at.tensor(
-        dtype=aesara.config.floatX, shape=[False] * kepler_data[1].ndim
+        dtype=pytensor.config.floatX, shape=[False] * kepler_data[1].ndim
     )
     fg = FunctionGraph([M, e], ops.kepler(M, e))
     compare_jax_and_py(fg, kepler_data[:2])
@@ -76,14 +80,14 @@ def limbdark_data():
 
 
 def test_quad_solution_vector(limbdark_data):
-    b = aesara.tensor.matrix()
-    r = aesara.tensor.matrix()
+    b = pytensor.tensor.matrix()
+    r = pytensor.tensor.matrix()
     fg = FunctionGraph([b, r], [ops.quad_solution_vector(b, r)])
     compare_jax_and_py(fg, limbdark_data)
 
 
 def test_contact_points():
-    args = [aesara.tensor.scalar() for _ in range(7)]
+    args = [pytensor.tensor.scalar() for _ in range(7)]
     out = ops.contact_points(*args)
     fg = FunctionGraph(args, out)
 

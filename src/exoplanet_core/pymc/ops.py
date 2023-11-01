@@ -4,16 +4,16 @@ __all__ = ["kepler", "quad_solution_vector", "contact_points"]
 
 from itertools import chain
 
-import aesara
-import aesara.tensor as at
 import numpy as np
-from aesara.graph import basic, op
+import pytensor
+import pytensor.tensor as pt
+from pytensor.graph import basic, op
 
 from exoplanet_core import driver
 
 
 def as_tensor_variable(x, dtype="float64", **kwargs):
-    t = at.as_tensor_variable(x, **kwargs)
+    t = pt.as_tensor_variable(x, **kwargs)
     if dtype is None:
         return t
     return t.astype(dtype)
@@ -84,13 +84,17 @@ class Kepler(op.Op):
         dfdM = (1 + ecosf) ** 2 / ome2**1.5
         dfde = (2 + ecosf) * sinf / ome2
 
-        bM = at.zeros_like(M)
-        be = at.zeros_like(M)
-        if not isinstance(gradients[0].type, aesara.gradient.DisconnectedType):
+        bM = pt.zeros_like(M)
+        be = pt.zeros_like(M)
+        if not isinstance(
+            gradients[0].type, pytensor.gradient.DisconnectedType
+        ):
             bM += gradients[0] * cosf * dfdM
             be += gradients[0] * cosf * dfde
 
-        if not isinstance(gradients[1].type, aesara.gradient.DisconnectedType):
+        if not isinstance(
+            gradients[1].type, pytensor.gradient.DisconnectedType
+        ):
             bM -= gradients[1] * sinf * dfdM
             be -= gradients[1] * sinf * dfde
 
@@ -137,8 +141,13 @@ class QuadSolutionVector(op.Op):
             raise ValueError("float64 precision is required")
         x = in_args[0]
         o = [
-            at.tensor(
-                broadcastable=tuple(x.broadcastable) + (False,),
+            # NOTE: Changed arg broadcastable to shape because of deprecation warning,
+            # BUT this might change again in the future: https://github.com/pymc-devs/pytensor/issues/408
+            # The other option is to use `x.type.shape + (3,)`
+            # Ref: https://pytensor.readthedocs.io/en/latest/library/tensor/basic.html#pytensor.tensor.TensorType
+            pt.tensor(
+                # PyTensor internally converts True to 1 and False to None
+                shape=tuple(x.broadcastable) + (False,),
                 dtype=x.dtype,
             )
             for _ in range(3)
@@ -164,18 +173,18 @@ class QuadSolutionVector(op.Op):
         bs = gradients[0]
 
         for g in gradients[1:]:
-            if not isinstance(g.type, aesara.gradient.DisconnectedType):
+            if not isinstance(g.type, pytensor.gradient.DisconnectedType):
                 raise ValueError(
                     "Backpropagation is only supported for the solution vector"
                 )
 
-        if isinstance(bs.type, aesara.gradient.DisconnectedType):
+        if isinstance(bs.type, pytensor.gradient.DisconnectedType):
             return [
-                aesara.gradient.DisconnectedType()(),
-                aesara.gradient.DisconnectedType()(),
+                pytensor.gradient.DisconnectedType()(),
+                pytensor.gradient.DisconnectedType()(),
             ]
 
-        return [at.sum(bs * dsdb, axis=-1), at.sum(bs * dsdr, axis=-1)]
+        return [pt.sum(bs * dsdb, axis=-1), pt.sum(bs * dsdr, axis=-1)]
 
     def R_op(self, inputs, eval_points):
         if eval_points[0] is None:
@@ -205,8 +214,13 @@ class ContactPoints(op.Op):
         out_args = [
             in_args[0].type(),
             in_args[0].type(),
-            at.tensor(
-                broadcastable=tuple(in_args[0].broadcastable),
+            # NOTE: Changed arg broadcastable to shape because of deprecation warning,
+            # BUT this might change again in the future: https://github.com/pymc-devs/pytensor/issues/408
+            # The other option is to use `in_args[0].type.shape`
+            # Ref: https://pytensor.readthedocs.io/en/latest/library/tensor/basic.html#pytensor.tensor.TensorType
+            pt.tensor(
+                # PyTensor internally converts True to 1 and False to None
+                shape=tuple(in_args[0].broadcastable),
                 dtype="int32",
             ),
         ]

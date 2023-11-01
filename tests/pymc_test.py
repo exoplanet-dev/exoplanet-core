@@ -9,8 +9,8 @@ from exoplanet_core.testing import (
     get_mean_and_true_anomaly,
 )
 
-aesara = pytest.importorskip("aesara")
-ops = pytest.importorskip("exoplanet_core.pymc4.ops")
+pytensor = pytest.importorskip("pytensor")
+ops = pytest.importorskip("exoplanet_core.pymc.ops")
 
 
 def compare_to_numpy(nop, op, *args):
@@ -31,7 +31,7 @@ def kepler_data():
 
 def test_kepler(kepler_data):
     M, e, f = kepler_data
-    sinf, cosf = aesara.function([], ops.kepler(M, e))()
+    sinf, cosf = pytensor.function([], ops.kepler(M, e))()
     assert np.all(np.isfinite(cosf))
     np.testing.assert_allclose(cosf, np.cos(f), atol=1e-7)
     assert np.all(np.isfinite(sinf))
@@ -40,9 +40,9 @@ def test_kepler(kepler_data):
 
 def test_kepler_grad(kepler_data):
     try:
-        verify_grad = aesara.tensor.verify_grad
+        verify_grad = pytensor.tensor.verify_grad
     except AttributeError:
-        from aesara.gradient import verify_grad
+        from pytensor.gradient import verify_grad
 
     M, e, f = kepler_data
     np.random.seed(1324)
@@ -69,17 +69,17 @@ def limbdark_data():
 
 
 def test_quad_solution_vector(limbdark_data):
-    b_ = aesara.tensor.matrix()
-    r_ = aesara.tensor.matrix()
-    func = aesara.function([b_, r_], ops.quad_solution_vector(b_, r_))
+    b_ = pytensor.tensor.matrix()
+    r_ = pytensor.tensor.matrix()
+    func = pytensor.function([b_, r_], ops.quad_solution_vector(b_, r_))
     compare_to_numpy(nops.quad_solution_vector, func, *limbdark_data)
 
 
 def test_quad_solution_vector_grad(limbdark_data):
     try:
-        verify_grad = aesara.tensor.verify_grad
+        verify_grad = pytensor.tensor.verify_grad
     except AttributeError:
-        from aesara.gradient import verify_grad
+        from pytensor.gradient import verify_grad
 
     # The numerical estimate is bad at discontinuities
     eps = 1e-7
@@ -94,8 +94,8 @@ def test_quad_solution_vector_grad(limbdark_data):
 @pytest.mark.parametrize("a", [5.0, 12.1234, 20000.0])
 @pytest.mark.parametrize("L", [0.7, 1.0, 1.5])
 def test_contact_points(a, L):
-    args = [aesara.tensor.scalar() for _ in range(7)]
-    func = aesara.function(args, ops.contact_points(*args))
+    args = [pytensor.tensor.scalar() for _ in range(7)]
+    func = pytensor.function(args, ops.contact_points(*args))
 
     es = np.linspace(0, 1, 25)[:-1]
     ws = np.linspace(-np.pi, np.pi, 51)

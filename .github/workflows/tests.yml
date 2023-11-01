@@ -17,8 +17,8 @@ jobs:
           - "test"
           - "test_comparison"
           - "test_pymc3"
-          - "test_pymc4"
-          - "test_pymc4_jax"
+          - "test_pymc"
+          - "test_pymc_jax"
           - "test_jax"
 
     steps:
