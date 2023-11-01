@@ -38,7 +38,7 @@ EXTRA_REQUIRE = {
         "batman-package",
         "starry",
         "numpy<1.22",
-        "xarray<=2023.10.0",
+        "xarray<2023.10.0",
     ],
     "benchmark": [
         "pytest",
