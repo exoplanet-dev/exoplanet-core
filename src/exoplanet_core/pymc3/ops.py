@@ -57,6 +57,7 @@ class Kepler(op.Op):
         (cos(f), sin(f)): The cosine and sine of the true anomaly ``f``.
 
     """
+
     __props__ = ()
 
     def make_node(self, M, ecc):
@@ -129,6 +130,7 @@ class QuadSolutionVector(op.Op):
             of ``b`` or ``r``.
 
     """
+
     __props__ = ()
 
     def make_node(self, b, r):

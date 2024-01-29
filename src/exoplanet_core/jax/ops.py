@@ -317,9 +317,9 @@ xla.backend_specific_translations["gpu"][
     quad_solution_vector_prim
 ] = _quad_solution_vector_gpu_translation_rule
 ad.primitive_jvps[quad_solution_vector_prim] = _quad_solution_vector_jvp
-batching.primitive_batchers[
-    quad_solution_vector_prim
-] = _quad_solution_vector_batch
+batching.primitive_batchers[quad_solution_vector_prim] = (
+    _quad_solution_vector_batch
+)
 
 
 # ******************
