@@ -42,9 +42,15 @@ def _lowering_rule(target_name, ctx, *args):
         return mlir.custom_call(
             target_name,
             operands=args,
-            operand_layouts=_default_layouts(aval.shape for aval in ctx.avals_in),
-            result_types=[mlir.aval_to_ir_type(aval) for aval in ctx.avals_out],
-            result_layouts=_default_layouts(aval.shape for aval in ctx.avals_out),
+            operand_layouts=_default_layouts(
+                aval.shape for aval in ctx.avals_in
+            ),
+            result_types=[
+                mlir.aval_to_ir_type(aval) for aval in ctx.avals_out
+            ],
+            result_layouts=_default_layouts(
+                aval.shape for aval in ctx.avals_out
+            ),
             backend_config=gpu_driver.cuda_descriptor(size),
         ).results
     else:
@@ -53,8 +59,12 @@ def _lowering_rule(target_name, ctx, *args):
             operands=(mlir.ir_constant(np.int32(size)),) + args,
             operand_layouts=[()]
             + _default_layouts(aval.shape for aval in ctx.avals_in),
-            result_types=[mlir.aval_to_ir_type(aval) for aval in ctx.avals_out],
-            result_layouts=_default_layouts(aval.shape for aval in ctx.avals_out),
+            result_types=[
+                mlir.aval_to_ir_type(aval) for aval in ctx.avals_out
+            ],
+            result_layouts=_default_layouts(
+                aval.shape for aval in ctx.avals_out
+            ),
         ).results
 
 
