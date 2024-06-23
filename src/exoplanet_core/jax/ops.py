@@ -38,14 +38,24 @@ def _lowering_rule(target_name, ctx, *args):
     shapes = [a.shape for a in ctx.avals_in]
     assert shapes[0] == shapes[1]
     size = prod(shapes[0])
-    return mlir.custom_call(
-        target_name,
-        operands=(mlir.ir_constant(np.int32(size)),) + args,
-        operand_layouts=[()]
-        + _default_layouts(aval.shape for aval in ctx.avals_in),
-        result_types=[mlir.aval_to_ir_type(aval) for aval in ctx.avals_out],
-        result_layouts=_default_layouts(aval.shape for aval in ctx.avals_out),
-    ).results
+    if "cuda" in target_name:
+        return mlir.custom_call(
+            target_name,
+            operands=args,
+            operand_layouts=_default_layouts(aval.shape for aval in ctx.avals_in),
+            result_types=[mlir.aval_to_ir_type(aval) for aval in ctx.avals_out],
+            result_layouts=_default_layouts(aval.shape for aval in ctx.avals_out),
+            backend_config=gpu_driver.cuda_descriptor(size),
+        ).results
+    else:
+        return mlir.custom_call(
+            target_name,
+            operands=(mlir.ir_constant(np.int32(size)),) + args,
+            operand_layouts=[()]
+            + _default_layouts(aval.shape for aval in ctx.avals_in),
+            result_types=[mlir.aval_to_ir_type(aval) for aval in ctx.avals_out],
+            result_layouts=_default_layouts(aval.shape for aval in ctx.avals_out),
+        ).results
 
 
 # **********
