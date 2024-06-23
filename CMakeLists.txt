@@ -15,8 +15,8 @@ install(TARGETS driver LIBRARY DESTINATION ${SKBUILD_PROJECT_NAME})
 
 pybind11_add_module(cpu_driver "src/exoplanet_core/jax/cpu_driver.cpp")
 target_include_directories(cpu_driver PRIVATE "src/exoplanet_core/jax")
-target_compile_features(driver PUBLIC cxx_std_14)
-install(TARGETS driver LIBRARY DESTINATION ${SKBUILD_PROJECT_NAME})
+target_compile_features(cpu_driver PUBLIC cxx_std_14)
+install(TARGETS cpu_driver LIBRARY DESTINATION ${SKBUILD_PROJECT_NAME}/jax)
 
 if ("$ENV{EXOPLANET_CORE_CUDA}" STREQUAL "yes")
     enable_language(CUDA)
@@ -25,6 +25,6 @@ if ("$ENV{EXOPLANET_CORE_CUDA}" STREQUAL "yes")
         gpu_driver
         "src/exoplanet_core/jax/cuda_kernels.cc.cu"
         "src/exoplanet_core/jax/gpu_driver.cpp")
-    target_compile_features(driver PUBLIC cxx_std_14)
-    install(TARGETS gpu_driver LIBRARY DESTINATION ${SKBUILD_PROJECT_NAME})
+    target_compile_features(gpu_driver PUBLIC cxx_std_14)
+    install(TARGETS gpu_driver LIBRARY DESTINATION ${SKBUILD_PROJECT_NAME}/jax)
 endif()
