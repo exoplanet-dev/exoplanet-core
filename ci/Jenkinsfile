@@ -19,6 +19,7 @@ pipeline {
       steps {
         sh 'EXOPLANET_CORE_CUDA=yes python3 -m pip install -v --user .'
         sh 'python3 -c "import exoplanet_core.jax"'
+        sh 'python3 -c "import exoplanet_core.jax.gpu_driver"'
         sh 'python3 -m pytest -v tests/jax_test.py'
       }
     }

@@ -25,7 +25,7 @@ except ImportError:
     pass
 else:
     for _name, _value in gpu_driver.registrations().items():
-        xla_client.register_custom_call_target(_name, _value, platform="gpu")
+        xla_client.register_custom_call_target(_name, _value, platform="CUDA")
 
 
 def _default_layouts(shapes):
