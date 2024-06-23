@@ -19,6 +19,7 @@ target_compile_features(cpu_driver PUBLIC cxx_std_14)
 install(TARGETS cpu_driver LIBRARY DESTINATION ${SKBUILD_PROJECT_NAME}/jax)
 
 if("$ENV{EXOPLANET_CORE_CUDA}" STREQUAL "yes")
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
     enable_language(CUDA)
     set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)
     find_package(CUDAToolkit REQUIRED)
