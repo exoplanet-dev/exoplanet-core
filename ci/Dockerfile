@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.5.0-cudnn9-devel-ubuntu22.04
+FROM nvidia/cuda:12.3.2-cudnn9-devel-ubuntu22.04
 
 RUN apt-get update && \
   DEBIAN_FRONTEND=noninteractive apt-get install -y \
