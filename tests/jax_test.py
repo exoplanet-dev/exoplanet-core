@@ -81,7 +81,7 @@ def test_quad_solution_vector_jit(limbdark_data):
     compare_to_numpy(
         nops.quad_solution_vector,
         jax.jit(ops.quad_solution_vector),
-        *limbdark_data
+        *limbdark_data,
     )
 
 

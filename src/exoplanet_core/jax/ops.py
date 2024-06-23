@@ -3,12 +3,12 @@
 __all__ = ["kepler", "quad_solution_vector", "contact_points"]
 
 from functools import partial
+from math import prod
 
 import numpy as np
 from jax import core
-from jax import numpy as jnp
 from jax.core import ShapedArray
-from jax.interpreters import ad, batching, xla
+from jax.interpreters import ad, batching, mlir, xla
 from jax.lib import xla_client
 
 from exoplanet_core.jax import cpu_driver
@@ -25,7 +25,47 @@ except ImportError:
     pass
 else:
     for _name, _value in gpu_driver.registrations().items():
-        xla_client.register_custom_call_target(_name, _value, platform="gpu")
+        xla_client.register_custom_call_target(_name, _value, platform="CUDA")
+
+
+def _default_layouts(shapes):
+    return [range(len(shape) - 1, -1, -1) for shape in shapes]
+
+
+def _lowering_rule(target_name, ctx, *args):
+    if any(a.dtype != np.float64 for a in ctx.avals_in):
+        raise ValueError(f"{target_name} requires float64 precision")
+    shapes = [a.shape for a in ctx.avals_in]
+    assert shapes[0] == shapes[1]
+    size = prod(shapes[0])
+    if "cuda" in target_name:
+        return mlir.custom_call(
+            target_name,
+            operands=args,
+            operand_layouts=_default_layouts(
+                aval.shape for aval in ctx.avals_in
+            ),
+            result_types=[
+                mlir.aval_to_ir_type(aval) for aval in ctx.avals_out
+            ],
+            result_layouts=_default_layouts(
+                aval.shape for aval in ctx.avals_out
+            ),
+            backend_config=gpu_driver.cuda_descriptor(size),
+        ).results
+    else:
+        return mlir.custom_call(
+            target_name,
+            operands=(mlir.ir_constant(np.int32(size)),) + args,
+            operand_layouts=[()]
+            + _default_layouts(aval.shape for aval in ctx.avals_in),
+            result_types=[
+                mlir.aval_to_ir_type(aval) for aval in ctx.avals_out
+            ],
+            result_layouts=_default_layouts(
+                aval.shape for aval in ctx.avals_out
+            ),
+        ).results
 
 
 # **********
@@ -68,56 +108,6 @@ def _kepler_abstract_eval(M, ecc):
     return (out_shape, out_shape)
 
 
-def _kepler_translation_rule(c, M, ecc):
-    shapes = (c.get_shape(M), c.get_shape(ecc))
-    if any(shape.element_type() != np.float64 for shape in shapes):
-        raise ValueError("float64 precision is required")
-
-    dims = tuple(shapes[0].dimensions())
-    if dims != shapes[1].dimensions():
-        raise ValueError("Dimension mismatch")
-    N = np.prod(dims).astype(np.int32)
-
-    order = tuple(range(len(dims) - 1, -1, -1))
-    shape = xla_client.Shape.array_shape(jnp.dtype(np.float64), dims, order)
-
-    return xops.CustomCallWithLayout(
-        c,
-        b"solve_kepler",
-        operands=(xops.ConstantLiteral(c, N), M, ecc),
-        shape_with_layout=xla_client.Shape.tuple_shape((shape, shape)),
-        operand_shapes_with_layout=(
-            xla_client.Shape.array_shape(jnp.dtype(jnp.int32), (), ()),
-            shape,
-            shape,
-        ),
-    )
-
-
-def _kepler_gpu_translation_rule(c, M, ecc):
-    shapes = (c.get_shape(M), c.get_shape(ecc))
-    if any(shape.element_type() != np.float64 for shape in shapes):
-        raise ValueError("float64 precision is required")
-
-    dims = tuple(shapes[0].dimensions())
-    if dims != shapes[1].dimensions():
-        raise ValueError("Dimension mismatch")
-    N = np.prod(dims).astype(np.int32)
-
-    order = tuple(range(len(dims) - 1, -1, -1))
-    shape = xla_client.Shape.array_shape(jnp.dtype(np.float64), dims, order)
-    opaque = gpu_driver.cuda_descriptor(N)
-
-    return xops.CustomCallWithLayout(
-        c,
-        b"cuda_kepler",
-        operands=(M, ecc),
-        shape_with_layout=xla_client.Shape.tuple_shape((shape, shape)),
-        operand_shapes_with_layout=(shape, shape),
-        opaque=opaque,
-    )
-
-
 def _kepler_jvp(args, tangents):
     M, e = args
     dM, de = tangents
@@ -146,12 +136,12 @@ kepler_prim = core.Primitive("kepler")
 kepler_prim.multiple_results = True
 kepler_prim.def_impl(partial(xla.apply_primitive, kepler_prim))
 kepler_prim.def_abstract_eval(_kepler_abstract_eval)
-xla.backend_specific_translations["cpu"][
-    kepler_prim
-] = _kepler_translation_rule
-xla.backend_specific_translations["gpu"][
-    kepler_prim
-] = _kepler_gpu_translation_rule
+mlir.register_lowering(
+    kepler_prim, partial(_lowering_rule, "solve_kepler"), platform="cpu"
+)
+mlir.register_lowering(
+    kepler_prim, partial(_lowering_rule, "cuda_kepler"), platform="cuda"
+)
 ad.primitive_jvps[kepler_prim] = _kepler_jvp
 batching.primitive_batchers[kepler_prim] = _kepler_batch
 
@@ -190,85 +180,6 @@ def _quad_solution_vector_abstract_eval(b, r):
         raise ValueError("Dimension mismatch")
     out_shape = ShapedArray(tuple(b.shape) + (3,), np.float64)
     return (out_shape, out_shape, out_shape)
-
-
-def _quad_solution_vector_translation_rule(c, b, r):
-    shapes = (c.get_shape(b), c.get_shape(r))
-    if any(shape.element_type() != np.float64 for shape in shapes):
-        raise ValueError("float64 precision is required")
-
-    dims = tuple(shapes[0].dimensions())
-    if dims != shapes[1].dimensions():
-        raise ValueError("Dimension mismatch")
-    N = np.prod(dims).astype(np.int32)
-
-    out_shape = xla_client.Shape.array_shape(
-        jnp.dtype(np.float64),
-        dims + (3,),
-        tuple(range(len(dims), -1, -1)),
-    )
-
-    return xops.CustomCallWithLayout(
-        c,
-        b"quad_solution_vector",
-        operands=(xops.ConstantLiteral(c, N), b, r),
-        shape_with_layout=xla_client.Shape.tuple_shape(
-            (out_shape, out_shape, out_shape)
-        ),
-        operand_shapes_with_layout=(
-            xla_client.Shape.array_shape(jnp.dtype(jnp.int32), (), ()),
-            xla_client.Shape.array_shape(
-                jnp.dtype(np.float64),
-                dims,
-                tuple(range(len(dims) - 1, -1, -1)),
-            ),
-            xla_client.Shape.array_shape(
-                jnp.dtype(np.float64),
-                dims,
-                tuple(range(len(dims) - 1, -1, -1)),
-            ),
-        ),
-    )
-
-
-def _quad_solution_vector_gpu_translation_rule(c, b, r):
-    shapes = (c.get_shape(b), c.get_shape(r))
-    if any(shape.element_type() != np.float64 for shape in shapes):
-        raise ValueError("float64 precision is required")
-
-    dims = tuple(shapes[0].dimensions())
-    if dims != shapes[1].dimensions():
-        raise ValueError("Dimension mismatch")
-    N = np.prod(dims).astype(np.int32)
-
-    out_shape = xla_client.Shape.array_shape(
-        jnp.dtype(np.float64),
-        dims + (3,),
-        tuple(range(len(dims), -1, -1)),
-    )
-    opaque = gpu_driver.cuda_descriptor(N)
-
-    return xops.CustomCallWithLayout(
-        c,
-        b"cuda_quad_solution_vector",
-        operands=(b, r),
-        shape_with_layout=xla_client.Shape.tuple_shape(
-            (out_shape, out_shape, out_shape)
-        ),
-        operand_shapes_with_layout=(
-            xla_client.Shape.array_shape(
-                jnp.dtype(np.float64),
-                dims,
-                tuple(range(len(dims) - 1, -1, -1)),
-            ),
-            xla_client.Shape.array_shape(
-                jnp.dtype(np.float64),
-                dims,
-                tuple(range(len(dims) - 1, -1, -1)),
-            ),
-        ),
-        opaque=opaque,
-    )
 
 
 # Note: this implementation only supports first-order differentiation and
@@ -310,12 +221,16 @@ quad_solution_vector_prim.def_impl(
 quad_solution_vector_prim.def_abstract_eval(
     _quad_solution_vector_abstract_eval
 )
-xla.backend_specific_translations["cpu"][
-    quad_solution_vector_prim
-] = _quad_solution_vector_translation_rule
-xla.backend_specific_translations["gpu"][
-    quad_solution_vector_prim
-] = _quad_solution_vector_gpu_translation_rule
+mlir.register_lowering(
+    quad_solution_vector_prim,
+    partial(_lowering_rule, "quad_solution_vector"),
+    platform="cpu",
+)
+mlir.register_lowering(
+    quad_solution_vector_prim,
+    partial(_lowering_rule, "cuda_quad_solution_vector"),
+    platform="cuda",
+)
 ad.primitive_jvps[quad_solution_vector_prim] = _quad_solution_vector_jvp
 batching.primitive_batchers[quad_solution_vector_prim] = (
     _quad_solution_vector_batch
@@ -342,37 +257,6 @@ def _contact_points_abstract_eval(*args):
     )
 
 
-def _contact_points_translation_rule(c, *args):
-    shapes = list(map(c.get_shape, args))
-    if any(shape.element_type() != np.float64 for shape in shapes):
-        raise ValueError("float64 precision is required")
-
-    dims = tuple(shapes[0].dimensions())
-    if any(dims != s.dimensions() for s in shapes):
-        raise ValueError("Dimension mismatch")
-    N = np.prod(dims).astype(np.int32)
-
-    order = tuple(range(len(dims) - 1, -1, -1))
-    shape = xla_client.Shape.array_shape(jnp.dtype(np.float64), dims, order)
-
-    return xops.CustomCallWithLayout(
-        c,
-        b"contact_points",
-        operands=(xops.ConstantLiteral(c, N),) + args,
-        shape_with_layout=xla_client.Shape.tuple_shape(
-            (
-                shape,
-                shape,
-                xla_client.Shape.array_shape(jnp.dtype(np.int32), dims, order),
-            )
-        ),
-        operand_shapes_with_layout=(
-            xla_client.Shape.array_shape(jnp.dtype(jnp.int32), (), ()),
-        )
-        + tuple(shape for _ in args),
-    )
-
-
 def _contact_points_batch(args, axes):
     assert axes[0] == axes[1]
     return contact_points(*args), axes
@@ -382,7 +266,9 @@ contact_points_prim = core.Primitive("contact_points")
 contact_points_prim.multiple_results = True
 contact_points_prim.def_impl(partial(xla.apply_primitive, contact_points_prim))
 contact_points_prim.def_abstract_eval(_contact_points_abstract_eval)
-xla.backend_specific_translations["cpu"][
-    contact_points_prim
-] = _contact_points_translation_rule
+mlir.register_lowering(
+    contact_points_prim,
+    partial(_lowering_rule, "contact_points"),
+    platform="cpu",
+)
 batching.primitive_batchers[contact_points_prim] = _contact_points_batch
