@@ -76,9 +76,9 @@ class Kepler(op.Op):
         cosf = resize_or_set(outputs, 1, M.shape)
         driver.solve_kepler(M, ecc, sinf, cosf)
 
-    def grad(self, inputs, gradients):
+    def pullback(self, inputs, outputs, cotangents):
         M, e = inputs
-        sinf, cosf = self(M, e)
+        sinf, cosf = outputs if outputs else self(M, e)
 
         ecosf = e * cosf
         ome2 = 1 - e**2
@@ -88,23 +88,43 @@ class Kepler(op.Op):
         bM = pt.zeros_like(M)
         be = pt.zeros_like(M)
         if not isinstance(
-            gradients[0].type, pytensor.gradient.DisconnectedType
+            cotangents[0].type, pytensor.gradient.DisconnectedType
         ):
-            bM += gradients[0] * cosf * dfdM
-            be += gradients[0] * cosf * dfde
+            bM += cotangents[0] * cosf * dfdM
+            be += cotangents[0] * cosf * dfde
 
         if not isinstance(
-            gradients[1].type, pytensor.gradient.DisconnectedType
+            cotangents[1].type, pytensor.gradient.DisconnectedType
         ):
-            bM -= gradients[1] * sinf * dfdM
-            be -= gradients[1] * sinf * dfde
+            bM -= cotangents[1] * sinf * dfdM
+            be -= cotangents[1] * sinf * dfde
 
         return [bM, be]
 
+    # Backward compatibility with PyTensor < 3 which calls grad() instead of pullback()
+    def grad(self, inputs, gradients):
+        return self.pullback(inputs, [], gradients)
+
+    def pushforward(self, inputs, outputs, tangents):
+        M, e = inputs
+        sinf, cosf = outputs if outputs else self(M, e)
+
+        ecosf = e * cosf
+        ome2 = 1 - e**2
+        dfdM = (1 + ecosf) ** 2 / ome2**1.5
+        dfde = (2 + ecosf) * sinf / ome2
+
+        dM = tangents[0]
+        de = tangents[1]
+
+        d_sinf = cosf * dfdM * dM + cosf * dfde * de
+        d_cosf = -sinf * dfdM * dM - sinf * dfde * de
+
+        return [d_sinf, d_cosf]
+
+    # Backward compatibility with PyTensor < 3 which calls R_op() instead of pushforward()
     def R_op(self, inputs, eval_points):
-        if eval_points[0] is None:
-            return eval_points
-        return self.grad(inputs, eval_points)
+        return self.pushforward(inputs, [], eval_points)
 
 
 kepler = Kepler()
@@ -169,12 +189,12 @@ class QuadSolutionVector(op.Op):
         dsdr = resize_or_set(outputs, 2, shape)
         driver.quad_solution_vector_with_grad(b, r, s, dsdb, dsdr)
 
-    def grad(self, inputs, gradients):
+    def pullback(self, inputs, outputs, cotangents):
         b, r = inputs
-        s, dsdb, dsdr = self(b, r)
-        bs = gradients[0]
+        s, dsdb, dsdr = outputs if outputs else self(b, r)
+        bs = cotangents[0]
 
-        for g in gradients[1:]:
+        for g in cotangents[1:]:
             if not isinstance(g.type, pytensor.gradient.DisconnectedType):
                 raise ValueError(
                     "Backpropagation is only supported for the solution vector"
@@ -188,10 +208,29 @@ class QuadSolutionVector(op.Op):
 
         return [pt.sum(bs * dsdb, axis=-1), pt.sum(bs * dsdr, axis=-1)]
 
+    # Backward compatibility with PyTensor < 3 which calls grad() instead of pullback()
+    def grad(self, inputs, gradients):
+        return self.pullback(inputs, [], gradients)
+
+    def pushforward(self, inputs, outputs, tangents):
+        b, r = inputs
+        _, dsdb, dsdr = outputs if outputs else self(b, r)
+        db = tangents[0]
+        dr = tangents[1]
+
+        # Only pushforward for the solution vector s (output 0);
+        # dsdb and dsdr are not differentiable here.
+        d_s = dsdb * db[..., None] + dsdr * dr[..., None]
+
+        return [
+            d_s,
+            pytensor.gradient.DisconnectedType()(),
+            pytensor.gradient.DisconnectedType()(),
+        ]
+
+    # Backward compatibility with PyTensor < 3 which calls R_op() instead of pushforward()
     def R_op(self, inputs, eval_points):
-        if eval_points[0] is None:
-            return eval_points
-        return self.grad(inputs, eval_points)
+        return self.pushforward(inputs, [], eval_points)
 
 
 _quad_solution_vector = QuadSolutionVector()
