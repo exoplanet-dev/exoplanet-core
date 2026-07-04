@@ -14,27 +14,27 @@ jobs:
         include:
           - session: test
             python-version: "3.10"
-            extras: "test"
+            uv-extra-args: "--extra test"
             test-path: "tests"
           - session: test_comparison
             python-version: "3.10"
-            extras: "test,comparison"
+            uv-extra-args: "--extra test --extra comparison"
             test-path: "tests/core_test.py"
           - session: test_pymc3
             python-version: "3.10"
-            extras: "test,pymc3"
+            uv-extra-args: "--extra test --extra pymc3"
             test-path: "tests/pymc3_test.py"
           - session: test_pymc
             python-version: "3.10"
-            extras: "test,pymc"
+            uv-extra-args: "--extra test --extra pymc"
             test-path: "tests/pymc_test.py"
           - session: test_pymc_jax
             python-version: "3.10"
-            extras: "test,pymc,jax"
+            uv-extra-args: "--extra test --extra pymc --extra jax"
             test-path: "tests/pymc_jax_test.py"
           - session: test_jax
             python-version: "3.10"
-            extras: "test,jax"
+            uv-extra-args: "--extra test --extra jax"
             test-path: "tests/jax_test.py"
 
     steps:
@@ -46,13 +46,5 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install Python
-        run: uv python install
-
-      - name: Create venv and install dependencies
-        run: |
-          uv venv
-          uv pip install ".[${{ matrix.extras }}]"
-
       - name: Run tests
-        run: .venv/bin/pytest -v ${{ matrix.test-path }}
+        run: uv run ${{ matrix.uv-extra-args }} pytest -v ${{ matrix.test-path }}
