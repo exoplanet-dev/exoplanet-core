@@ -7,12 +7,10 @@ on:
 
 jobs:
   tests:
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10"]
-        os: ["ubuntu-latest"]
         include:
           - session: test
             uv-extras: "--extra test"
@@ -40,7 +38,7 @@ jobs:
 
       - uses: astral-sh/setup-uv@v6
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.10"
 
       - name: Run tests
-        run: uv run ${{ matrix.uv-extras }} pytest -v ${{ matrix.test-path }}
+        run: uv run --python 3.10 ${{ matrix.uv-extras }} pytest -v ${{ matrix.test-path }}
