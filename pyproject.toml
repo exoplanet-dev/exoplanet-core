@@ -18,19 +18,19 @@ dynamic = ["version"]
 dependencies = ["numpy"]
 
 [project.optional-dependencies]
-pymc3 = ["pymc3>=3.9", "numpy<1.22"]
+pymc3 = ["pymc3>=3.9; python_version<'3.12'", "numpy<1.22; python_version<'3.12'"]
 pymc = ["pymc>=5.0.0"]
 jax = ["jax", "jaxlib"]
 test = ["pytest"]
-comparison = ["batman-package", "starry", "numpy<1.22", "xarray<2023.10.0"]
+comparison = ["batman-package; python_version<'3.12'", "starry; python_version<'3.12'", "numpy<1.22; python_version<'3.12'", "xarray<2023.10.0; python_version<'3.12'"]
 benchmark = [
   "pytest",
   "pytest-benchmark",
-  "radvel",
+  "radvel; python_version<'3.12'",
   "kepler.py",
-  "batman-package",
-  "starry",
-  "exoplanet==0.4.5",
+  "batman-package; python_version<'3.12'",
+  "starry; python_version<'3.12'",
+  "exoplanet==0.4.5; python_version<'3.12'",
 ]
 
 [project.urls]
@@ -52,6 +52,34 @@ write_to = "src/exoplanet_core/exoplanet_core_version.py"
 
 [tool.cibuildwheel]
 skip = "pp* *-win32 *-musllinux_* *-manylinux_i686"
+
+[tool.uv]
+conflicts = [
+  [
+    { extra = "jax" },
+    { extra = "comparison" },
+  ],
+  [
+    { extra = "jax" },
+    { extra = "pymc3" },
+  ],
+  [
+    { extra = "pymc3" },
+    { extra = "pymc" },
+  ],
+  [
+    { extra = "comparison" },
+    { extra = "pymc" },
+  ],
+  [
+    { extra = "benchmark" },
+    { extra = "jax" },
+  ],
+  [
+    { extra = "benchmark" },
+    { extra = "pymc" },
+  ],
+]
 
 [tool.black]
 line-length = 79
