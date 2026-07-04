@@ -15,22 +15,22 @@ jobs:
         os: ["ubuntu-latest"]
         include:
           - session: test
-            extras: "test"
+            uv-extras: "--extra test"
             test-path: "tests"
           - session: test_comparison
-            extras: "test,comparison"
+            uv-extras: "--extra test --extra comparison"
             test-path: "tests/core_test.py"
           - session: test_pymc3
-            extras: "test,pymc3"
+            uv-extras: "--extra test --extra pymc3"
             test-path: "tests/pymc3_test.py"
           - session: test_pymc
-            extras: "test,pymc"
+            uv-extras: "--extra test --extra pymc"
             test-path: "tests/pymc_test.py"
           - session: test_pymc_jax
-            extras: "test,pymc,jax"
+            uv-extras: "--extra test --extra pymc --extra jax"
             test-path: "tests/pymc_jax_test.py"
           - session: test_jax
-            extras: "test,jax"
+            uv-extras: "--extra test --extra jax"
             test-path: "tests/jax_test.py"
 
     steps:
@@ -42,11 +42,5 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install Python
-        run: uv python install
-
-      - name: Install dependencies
-        run: uv pip install --system ".[${{ matrix.extras }}]"
-
       - name: Run tests
-        run: python -m pytest -v ${{ matrix.test-path }}
+        run: uv run ${{ matrix.uv-extras }} pytest -v ${{ matrix.test-path }}
