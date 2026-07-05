@@ -1,0 +1,38 @@
+PyMC 6 / PyTensor 3 Compatibility Update
+==========================================
+
+Problem
+-------
+PyTensor 3 (shipped with PyMC 6) renamed two Op method pairs that exoplanet-core
+relied on, causing import and runtime failures:
+
+  grad(inputs, output_grads)       -> pullback(inputs, outputs, cotangents)
+  R_op(inputs, eval_points)        -> pushforward(inputs, outputs, tangents)
+
+Files Changed
+-------------
+src/exoplanet_core/pymc/ops.py
+  - Kepler: added pullback() with the correct new signature; kept grad() as a
+    one-liner shim (delegates to pullback) for PyTensor 2 / PyMC 5 compatibility.
+    Added pushforward() implementing the analytic JVP for sinf and cosf.
+    Kept R_op() as a one-liner shim (delegates to pushforward) for PyMC 5 compat.
+    Both pullback() and pushforward() accept the pre-computed forward outputs
+    from PyTensor 3 (avoiding a redundant graph node) and fall back to
+    recomputing via self() when called from the PyTensor 2 shims (outputs=[]).
+  - QuadSolutionVector: same pattern. pullback() carries the VJP logic for the
+    solution vector s; pushforward() computes d_s = dsdb*db + dsdr*dr and marks
+    the derivative outputs (dsdb, dsdr) as DisconnectedType. Both methods use
+    the pre-computed outputs (s, dsdb, dsdr) when available, avoiding a second
+    call to the more expensive quad_solution_vector_with_grad C++ function.
+  - ContactPoints: no gradient methods existed before or after; no changes needed.
+
+pyproject.toml
+  - Added pytensor>=2.0 as an explicit dependency alongside pymc>=5.0.0.
+
+CLAUDE.md
+  - Created initial codebase documentation for future Claude Code sessions.
+
+Test Results
+------------
+PyMC 5.28.5 / PyTensor 2.38.3:  13/13 passed
+PyMC 6.0.1  / PyTensor 3.0.7:   13/13 passed
