@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this project is
 
-`exoplanet-core` is the compiled C++ backend for the [exoplanet](https://github.com/exoplanet-dev/exoplanet/) project. It provides three astronomical computations — Kepler's equation solver, quadratic limb-darkening solution vector, and orbital contact points — exposed through three Python interfaces: NumPy, JAX, and PyMC (v5+). PyMC3 (Theano-based) is also supported as a legacy interface.
+`exoplanet-core` is the compiled C++ backend for the [exoplanet](https://github.com/exoplanet-dev/exoplanet/) project. It provides three astronomical computations — Kepler's equation solver, quadratic limb-darkening solution vector, and orbital contact points — exposed through three Python interfaces: NumPy, JAX, and PyMC (v5+). Legacy PyMC3 (Theano-based) code remains in the tree (`src/exoplanet_core/pymc3/`, `tests/pymc3_test.py`) but is unsupported: there is no installable extra for it and it is not tested in CI.
+
+Requires Python >= 3.12; the JAX interface requires `jax >= 0.5.0`.
 
 ## Build
 
@@ -21,23 +23,19 @@ The build produces two shared libraries: `driver` (numpy/pymc backend) and `cpu_
 
 ## Testing
 
-Tests are run per-backend via nox sessions:
+Tests are run per-backend with `uv run` and the matching extras (this is what CI does; tests for backends that aren't installed are skipped via `importorskip`):
 
 ```bash
 # Run all default tests (numpy ops)
-python -m nox -s test
+uv run --extra test pytest tests
 
 # Run a specific backend's tests
-python -m nox -s test_jax
-python -m nox -s test_pymc
-python -m nox -s test_pymc3
-
-# Run a single test file directly (after pip install -e .)
-pytest tests/numpy_test.py
-pytest tests/jax_test.py -v
+uv run --extra test --extra jax pytest tests/jax_test.py
+uv run --extra test --extra pymc pytest tests/pymc_test.py
+uv run --extra test --extra pymc --extra jax pytest tests/pymc_jax_test.py
 
 # Run a single test
-pytest tests/numpy_test.py::test_kepler
+uv run --extra test pytest tests/numpy_test.py::test_kepler
 ```
 
 ## Linting and formatting
@@ -62,7 +60,7 @@ C++ headers (src/exoplanet_core/lib/include/exoplanet/)
     ↓ compiled via pybind11
 driver.so  (numpy/pymc)      cpu_driver.so  (JAX)
     ↓                              ↓
-numpy/ops.py               jax/ops.py (JAX primitives with JVP/batching rules)
+numpy/ops.py               jax/ops.py (jax.ffi calls with custom_jvp rules)
 pymc/ops.py (pytensor Ops)
     ↓
 core.py  (top-level convenience functions using numpy backend)
@@ -87,7 +85,11 @@ All three interfaces (`exoplanet_core.numpy.ops`, `exoplanet_core.jax.ops`, `exo
 
 ### JAX integration
 
-`jax/ops.py` registers custom XLA primitives (`kepler_prim`, `quad_solution_vector_prim`, `contact_points_prim`) with JVP rules and batching rules. The `_lowering_rule` dispatches to CPU or CUDA XLA custom calls. The `quad_solution_vector` primitive internally returns `(s, dsdb, dsdr)` — the public `quad_solution_vector` function strips the gradient outputs.
+The JAX interface is built on the [JAX FFI](https://docs.jax.dev/en/latest/ffi.html). `cpu_driver.cpp` (and `cuda_kernels.cc.cu` for GPU) define typed XLA FFI handlers with `XLA_FFI_DEFINE_HANDLER_SYMBOL` and expose them to Python as capsules via a pybind11 `registrations()` dict. `jax/ops.py` registers those handlers with `jax.ffi.register_ffi_target` (target names prefixed `exoplanet_core_`, CPU and CUDA registered under the same names on different platforms) and invokes them with `jax.ffi.ffi_call(..., vmap_method="broadcast_all")`. Derivatives are defined with `jax.custom_jvp`: `kepler` supports higher-order differentiation; `quad_solution_vector` is first-order only (its JVP calls the base FFI op, which has no JVP of its own). The base `quad_solution_vector` FFI call returns `(s, dsdb, dsdr)` — the public function strips the gradient outputs, and the JVP rule uses them.
+
+The XLA FFI headers (`xla/ffi/api/`) are vendored in `src/exoplanet_core/lib/vendor/` (see the README there for how to refresh them), so jax/jaxlib is not needed at build time.
+
+The CUDA handlers are compile-untested on this machine (no CUDA); GPU builds remain opt-in via `EXOPLANET_CORE_CUDA=yes`.
 
 ### PyMC integration
 

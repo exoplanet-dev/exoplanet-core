@@ -1,25 +1,32 @@
 #include <exoplanet/exoplanet.h>
 
+#include <algorithm>
+#include <cstdint>
 #include <limits>
 
 #include "cuda_kernels.h"
-#include "kernel_helpers.h"
+#include "xla/ffi/api/ffi.h"
+
+namespace ffi = xla::ffi;
+
 namespace exoplanet {
 
 namespace {
 template <typename Scalar>
-__global__ void KeplerKernel(int N, const Scalar* M, const Scalar* ecc, Scalar* sinf,
+__global__ void KeplerKernel(int64_t N, const Scalar* M, const Scalar* ecc, Scalar* sinf,
                              Scalar* cosf) {
-  for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < N; idx += blockDim.x * gridDim.x) {
+  for (int64_t idx = blockIdx.x * blockDim.x + threadIdx.x; idx < N;
+       idx += blockDim.x * gridDim.x) {
     kepler::solve_kepler<Scalar>(M[idx], ecc[idx], sinf + idx, cosf + idx);
   }
 }
 
 template <typename Scalar>
-__global__ void QuadSolutionVectorKernel(Scalar eps, int N, const Scalar* b, const Scalar* r,
+__global__ void QuadSolutionVectorKernel(Scalar eps, int64_t N, const Scalar* b, const Scalar* r,
                                          Scalar* s, Scalar* dsdb, Scalar* dsdr) {
-  for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < N; idx += blockDim.x * gridDim.x) {
-    int offset = 3 * idx;
+  for (int64_t idx = blockIdx.x * blockDim.x + threadIdx.x; idx < N;
+       idx += blockDim.x * gridDim.x) {
+    int64_t offset = 3 * idx;
     int sgn = exoplanet::sgn(b[idx]);
     limbdark::quad_solution_vector<true>(eps, std::abs(b[idx]), r[idx], s + offset, dsdb + offset,
                                          dsdr + offset);
@@ -29,54 +36,58 @@ __global__ void QuadSolutionVectorKernel(Scalar eps, int N, const Scalar* b, con
   }
 }
 
+ffi::Error CudaErrorToFfiError(cudaError_t error) {
+  if (error != cudaSuccess) {
+    return ffi::Error::Internal(cudaGetErrorString(error));
+  }
+  return ffi::Error::Success();
+}
+
+ffi::Error CudaKeplerImpl(cudaStream_t stream, ffi::Buffer<ffi::F64> M, ffi::Buffer<ffi::F64> ecc,
+                          ffi::ResultBuffer<ffi::F64> sinf, ffi::ResultBuffer<ffi::F64> cosf) {
+  const int64_t N = M.element_count();
+  const int block_dim = 128;
+  const int grid_dim = std::min<int64_t>(1024, (N + block_dim - 1) / block_dim);
+
+  KeplerKernel<<<grid_dim, block_dim, 0, stream>>>(N, M.typed_data(), ecc.typed_data(),
+                                                   sinf->typed_data(), cosf->typed_data());
+  return CudaErrorToFfiError(cudaGetLastError());
+}
+
+ffi::Error CudaQuadSolutionVectorImpl(cudaStream_t stream, ffi::Buffer<ffi::F64> b,
+                                      ffi::Buffer<ffi::F64> r, ffi::ResultBuffer<ffi::F64> s,
+                                      ffi::ResultBuffer<ffi::F64> dsdb,
+                                      ffi::ResultBuffer<ffi::F64> dsdr) {
+  const int64_t N = b.element_count();
+  const double eps = std::numeric_limits<double>::epsilon();
+  const int block_dim = 128;
+  const int grid_dim = std::min<int64_t>(1024, (N + block_dim - 1) / block_dim);
+
+  QuadSolutionVectorKernel<<<grid_dim, block_dim, 0, stream>>>(
+      eps, N, b.typed_data(), r.typed_data(), s->typed_data(), dsdb->typed_data(),
+      dsdr->typed_data());
+  return CudaErrorToFfiError(cudaGetLastError());
+}
+
 }  // namespace
 
-void ThrowIfError(cudaError_t error) {
-  if (error != cudaSuccess) {
-    throw std::runtime_error(cudaGetErrorString(error));
-  }
-}
+XLA_FFI_DEFINE_HANDLER_SYMBOL(CudaKepler, CudaKeplerImpl,
+                              ffi::Ffi::Bind()
+                                  .Ctx<ffi::PlatformStream<cudaStream_t>>()
+                                  .Arg<ffi::Buffer<ffi::F64>>()  // M
+                                  .Arg<ffi::Buffer<ffi::F64>>()  // ecc
+                                  .Ret<ffi::Buffer<ffi::F64>>()  // sinf
+                                  .Ret<ffi::Buffer<ffi::F64>>()  // cosf
+);
 
-struct SizeDescriptor {
-  int N;
-};
-
-std::string BuildCudaDescriptor(int N) { return PackDescriptorAsString(SizeDescriptor{N}); }
-
-void CudaKepler(cudaStream_t stream, void** buffers, const char* opaque, std::size_t opaque_len) {
-  const double* M = reinterpret_cast<const double*>(buffers[0]);
-  const double* ecc = reinterpret_cast<const double*>(buffers[1]);
-  double* sinf = reinterpret_cast<double*>(buffers[2]);
-  double* cosf = reinterpret_cast<double*>(buffers[3]);
-
-  const auto& descriptor = *UnpackDescriptor<SizeDescriptor>(opaque, opaque_len);
-  int N = descriptor.N;
-
-  const int block_dim = 128;
-  const int grid_dim = std::min<int>(1024, (N + block_dim - 1) / block_dim);
-
-  KeplerKernel<<<grid_dim, block_dim, 0, stream>>>(N, M, ecc, sinf, cosf);
-  ThrowIfError(cudaGetLastError());
-}
-
-void CudaQuadSolutionVector(cudaStream_t stream, void** buffers, const char* opaque,
-                            std::size_t opaque_len) {
-  const double* b = reinterpret_cast<const double*>(buffers[0]);
-  const double* r = reinterpret_cast<const double*>(buffers[1]);
-  double* s = reinterpret_cast<double*>(buffers[2]);
-  double* dsdb = reinterpret_cast<double*>(buffers[3]);
-  double* dsdr = reinterpret_cast<double*>(buffers[4]);
-
-  const auto& descriptor = *UnpackDescriptor<SizeDescriptor>(opaque, opaque_len);
-  int N = descriptor.N;
-
-  const double eps = std::numeric_limits<double>::epsilon();
-
-  const int block_dim = 128;
-  const int grid_dim = std::min<int>(1024, (N + block_dim - 1) / block_dim);
-
-  QuadSolutionVectorKernel<<<grid_dim, block_dim, 0, stream>>>(eps, N, b, r, s, dsdb, dsdr);
-  ThrowIfError(cudaGetLastError());
-}
+XLA_FFI_DEFINE_HANDLER_SYMBOL(CudaQuadSolutionVector, CudaQuadSolutionVectorImpl,
+                              ffi::Ffi::Bind()
+                                  .Ctx<ffi::PlatformStream<cudaStream_t>>()
+                                  .Arg<ffi::Buffer<ffi::F64>>()  // b
+                                  .Arg<ffi::Buffer<ffi::F64>>()  // r
+                                  .Ret<ffi::Buffer<ffi::F64>>()  // s
+                                  .Ret<ffi::Buffer<ffi::F64>>()  // dsdb
+                                  .Ret<ffi::Buffer<ffi::F64>>()  // dsdr
+);
 
 }  // namespace exoplanet
