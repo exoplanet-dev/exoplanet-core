@@ -38,5 +38,5 @@ jobs:
 
       - name: Run tests
         run: |
-          python -m nox --non-interactive --error-on-missing-interpreter \
+          python -m nox --non-interactive --error-on-missing-interpreters \
             --session ${{ matrix.session }}-${{ matrix.python-version }}
