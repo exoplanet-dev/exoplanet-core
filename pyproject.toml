@@ -3,7 +3,7 @@ name = "exoplanet_core"
 description = "The compiled backend for exoplanet"
 authors = [{ name = "Dan Foreman-Mackey", email = "foreman.mackey@gmail.com" }]
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.12"
 license = { text = "MIT License" }
 classifiers = [
   "Development Status :: 4 - Beta",
@@ -20,7 +20,7 @@ dependencies = ["numpy"]
 [project.optional-dependencies]
 pymc3 = ["pymc3>=3.9; python_version<'3.12'", "numpy<1.22; python_version<'3.12'"]
 pymc = ["pymc>=5.0.0", "pytensor>=2.0"]
-jax = ["jax", "jaxlib"]
+jax = ["jax>=0.5.0"]
 test = ["pytest"]
 comparison = ["batman-package; python_version<'3.12'", "starry; python_version<'3.12'", "numpy<1.22; python_version<'3.12'", "xarray<2023.10.0; python_version<'3.12'"]
 benchmark = [
@@ -52,34 +52,6 @@ write_to = "src/exoplanet_core/exoplanet_core_version.py"
 
 [tool.cibuildwheel]
 skip = "pp* *-win32 *-musllinux_* *-manylinux_i686"
-
-[tool.uv]
-conflicts = [
-  [
-    { extra = "jax" },
-    { extra = "comparison" },
-  ],
-  [
-    { extra = "jax" },
-    { extra = "pymc3" },
-  ],
-  [
-    { extra = "pymc3" },
-    { extra = "pymc" },
-  ],
-  [
-    { extra = "comparison" },
-    { extra = "pymc" },
-  ],
-  [
-    { extra = "benchmark" },
-    { extra = "jax" },
-  ],
-  [
-    { extra = "benchmark" },
-    { extra = "pymc" },
-  ],
-]
 
 [tool.black]
 line-length = 79

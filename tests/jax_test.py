@@ -13,12 +13,7 @@ jax = pytest.importorskip("jax")
 jnp = pytest.importorskip("jax.numpy")
 ops = pytest.importorskip("exoplanet_core.jax.ops")
 
-try:
-    from jax.lib import xla_bridge
-except ImportError:
-    ON_GPU = False
-else:
-    ON_GPU = xla_bridge.get_backend().platform == "gpu"
+ON_GPU = jax.default_backend() == "gpu"
 
 
 def compare_to_numpy(nop, op, *args):

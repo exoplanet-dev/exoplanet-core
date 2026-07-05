@@ -13,27 +13,23 @@ jobs:
       matrix:
         include:
           - session: test
-            python-version: "3.10"
+            python-version: "3.12"
             uv-extra-args: "--extra test"
             test-path: "tests"
-          - session: test_comparison
-            python-version: "3.10"
-            uv-extra-args: "--extra test --extra comparison"
-            test-path: "tests/core_test.py"
-          - session: test_pymc3
-            python-version: "3.10"
-            uv-extra-args: "--extra test --extra pymc3"
-            test-path: "tests/pymc3_test.py"
+          - session: test
+            python-version: "3.14"
+            uv-extra-args: "--extra test"
+            test-path: "tests"
           - session: test_pymc
-            python-version: "3.10"
+            python-version: "3.14"
             uv-extra-args: "--extra test --extra pymc"
             test-path: "tests/pymc_test.py"
           - session: test_pymc_jax
-            python-version: "3.10"
+            python-version: "3.14"
             uv-extra-args: "--extra test --extra pymc --extra jax"
             test-path: "tests/pymc_jax_test.py"
           - session: test_jax
-            python-version: "3.10"
+            python-version: "3.14"
             uv-extra-args: "--extra test --extra jax"
             test-path: "tests/jax_test.py"
 
