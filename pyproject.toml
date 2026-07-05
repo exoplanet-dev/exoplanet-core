@@ -19,7 +19,7 @@ dependencies = ["numpy"]
 
 [project.optional-dependencies]
 pymc3 = ["pymc3>=3.9; python_version<'3.12'", "numpy<1.22; python_version<'3.12'"]
-pymc = ["pymc>=5.0.0"]
+pymc = ["pymc>=5.0.0", "pytensor>=2.0"]
 jax = ["jax", "jaxlib"]
 test = ["pytest"]
 comparison = ["batman-package; python_version<'3.12'", "starry; python_version<'3.12'", "numpy<1.22; python_version<'3.12'", "xarray<2023.10.0; python_version<'3.12'"]
