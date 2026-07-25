@@ -86,6 +86,46 @@ def test_quad_solution_vector(limbdark_data):
     compare_jax_and_py(fg, limbdark_data)
 
 
+def test_quad_solution_vector_jax_grad(limbdark_data):
+    """The JAX conversion must be differentiable by JAX itself.
+
+    ``test_quad_solution_vector`` only compares *values* between the JAX and
+    Python linkers, which passes even when the conversion carries no
+    differentiation rule. A JAX-based NUTS sampler (``pymc.sampling.jax``)
+    instead funcifies the logp and calls ``jax.grad`` on it, so a missing JVP
+    shows up only here -- it used to raise "The FFI call to
+    `exoplanet_core_quad_solution_vector` cannot be differentiated".
+    """
+    import jax.numpy as jnp
+    from pytensor.link.jax.dispatch import jax_funcify
+
+    from exoplanet_core.jax import ops as jax_ops
+    from exoplanet_core.pymc import ops as pymc_ops
+
+    b_val, r_val = limbdark_data
+    b_val = jnp.asarray(b_val)
+    r_val = jnp.asarray(r_val)
+
+    # The JAX callable the linker would use for this Op.
+    impl = jax_funcify(pymc_ops.QuadSolutionVector())
+
+    def summed_solution(bb, rr):
+        return jnp.sum(impl(bb, rr)[0])
+
+    grad_b, grad_r = jax.grad(summed_solution, argnums=(0, 1))(b_val, r_val)
+    assert np.all(np.isfinite(grad_b))
+    assert np.all(np.isfinite(grad_r))
+
+    # d(sum_k s_k)/db is sum_k dsdb_k, which the C++ kernel returns directly.
+    _, dsdb, dsdr = jax_ops._base_quad_solution_vector(b_val, r_val)
+    np.testing.assert_allclose(
+        np.asarray(grad_b), np.asarray(jnp.sum(dsdb, axis=-1)), rtol=1e-6
+    )
+    np.testing.assert_allclose(
+        np.asarray(grad_r), np.asarray(jnp.sum(dsdr, axis=-1)), rtol=1e-6
+    )
+
+
 def test_contact_points():
     args = [pytensor.tensor.scalar() for _ in range(7)]
     out = ops.contact_points(*args)
