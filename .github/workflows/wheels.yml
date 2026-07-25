@@ -23,11 +23,13 @@ jobs:
           - "macos-14"
           - "windows-latest"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: true
           fetch-depth: 0
       - uses: pypa/cibuildwheel@v4.1.0
+      # upload/download-artifact stay on v4: v5 still declares node20,
+      # so bumping gains nothing for the Node 24 migration.
       - uses: actions/upload-artifact@v4
         with:
           name: binary-${{ matrix.os }}
@@ -36,11 +38,11 @@ jobs:
   build_sdist:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: true
           fetch-depth: 0
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         name: Install Python
         with:
           python-version: "3.14"
@@ -70,6 +72,8 @@ jobs:
                  "point at this commit, move the release tag to its own commit."
             exit 1
           fi
+      # upload/download-artifact stay on v4: v5 still declares node20,
+      # so bumping gains nothing for the Node 24 migration.
       - uses: actions/upload-artifact@v4
         with:
           name: sdist
@@ -85,6 +89,8 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     steps:
+      # upload/download-artifact stay on v4: v5 still declares node20,
+      # so bumping gains nothing for the Node 24 migration.
       - uses: actions/download-artifact@v4
         with:
           path: dist
