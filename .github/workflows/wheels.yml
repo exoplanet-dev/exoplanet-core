@@ -52,6 +52,24 @@ jobs:
         run: python -m build --sdist .
       - name: Check the sdist
         run: python -m twine check dist/*.tar.gz
+      # On a tag push, fail fast if the version setuptools_scm derived does not
+      # match the tag. Without this the release is silent-but-wrong: two tags
+      # on one commit (e.g. v0.4.0 alongside v0.4.0rc2) make `git describe`
+      # pick one non-deterministically, so a v0.4.0 run built and would have
+      # published rc2-named artifacts. It only failed because those files
+      # already existed on PyPI.
+      - name: Version matches the tag
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          built=$(ls dist/*.tar.gz | sed -E 's|.*/exoplanet_core-(.*)\.tar\.gz|\1|')
+          echo "tag=$tag built=$built"
+          if [ "$tag" != "$built" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME implies version '$tag' but the" \
+                 "build produced '$built'. Refusing to publish. If two tags" \
+                 "point at this commit, move the release tag to its own commit."
+            exit 1
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: sdist
