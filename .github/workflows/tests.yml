@@ -4,6 +4,11 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Nightly, for the unlocked-resolution job at the bottom. It catches an
+  # upstream release breaking us, which has nothing to do with when we push.
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
 
 jobs:
   tests:
@@ -42,5 +47,139 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      # --locked, not a bare `uv run`. It installs uv.lock exactly and FAILS
+      # if the lock is out of date with pyproject.toml, so a dependency edit
+      # cannot land without a matching lock update. Without it these jobs
+      # re-resolve on every run and can silently drift onto a different
+      # dependency set than the one anybody reviewed.
       - name: Run tests
-        run: uv run ${{ matrix.uv-extra-args }} pytest -v ${{ matrix.test-path }}
+        run: uv run --locked ${{ matrix.uv-extra-args }} pytest -v ${{ matrix.test-path }}
+
+  # Resolves WITHOUT the lock, the way a fresh install does.
+  #
+  # The jobs above verify what we SHIP: one exact, frozen dependency set.
+  # They do not verify what users RESOLVE, and those are different artifacts.
+  # This stack is unusually sensitive to the gap -- a numpy/numba/pytensor
+  # release can shift the whole solution rather than fail loudly.
+  #
+  # It exists because of a concrete incident: uv selected numba 0.63.0b1 (a
+  # pre-release whose numpy cap had not yet been added) alongside numpy
+  # 2.5.2, and test_pymc died with "module 'numpy' has no attribute
+  # 'row_stack'". The lock stops that recurring silently; this job is what
+  # notices when the ecosystem moves underneath the lock.
+  #
+  # Deliberately not a required check: an upstream project releasing
+  # something incompatible must not block merges for a reason that has
+  # nothing to do with the pull request. A failure here fails the workflow
+  # run, which is the alarm we want.
+  tests-latest-deps:
+    name: tests-latest-deps
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+
+    # Scoped to this job; only this job files issues.
+    permissions:
+      contents: read
+      issues: write
+
+    # Both the open-on-failure and close-on-success steps look the tracking
+    # issue up by this exact title, so it is defined once and cannot drift.
+    env:
+      ISSUE_TITLE: "Nightly: tests fail against freshly resolved dependencies"
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.14"
+
+      # `uv lock --upgrade` re-resolves from pyproject's ranges, ignoring the
+      # pins in uv.lock. The versions are saved to a file because "what did
+      # it actually pick" is the first question anyone asks about a
+      # resolution failure.
+      - name: Resolve fresh and record what was picked
+        run: |
+          uv lock --upgrade
+          uv run --frozen --extra test --extra pymc --extra jax python -c "
+          import importlib.metadata as md
+          for n in ('numpy','numba','llvmlite','pytensor','pymc','jax','jaxlib','scipy'):
+              try: print(f'{n:12s} {md.version(n)}')
+              except Exception: print(f'{n:12s} -- not installed')
+          " | tee resolved.txt
+
+      - name: Run tests
+        run: |
+          uv run --frozen --extra test pytest -v tests
+          uv run --frozen --extra test --extra pymc pytest -v tests/pymc_test.py
+          uv run --frozen --extra test --extra jax pytest -v tests/jax_test.py
+          uv run --frozen --extra test --extra pymc --extra jax pytest -v tests/pymc_jax_test.py
+
+      # Email alone is a weak alarm for this job. A nightly that stays broken
+      # for a week sends seven identical mails, which is how an alarm becomes
+      # noise and then becomes invisible. One issue, updated in place, has a
+      # state that means something: open = still broken, closed = fixed.
+      #
+      # continue-on-error on both issue steps is load-bearing, not caution.
+      # Issue bookkeeping must never decide this job's verdict: the tests
+      # do. Without it, `gh issue list` failing turns a GREEN suite RED --
+      # which is exactly what happened on a fork, where GitHub disables
+      # Issues by default ("the '<repo>' repository has disabled issues",
+      # then `set -e` ends the step). A repo with issues off, a token
+      # without issues:write, or a transient API error would all invert the
+      # signal the job exists to give.
+      - name: Open or update the tracking issue on failure
+        if: failure()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          {
+            echo "The nightly unlocked-resolution job failed."
+            echo
+            echo "It runs \`uv lock --upgrade\` and then the suite, so it"
+            echo "reflects what a fresh resolution gets rather than what"
+            echo "uv.lock pins. A failure here usually means an upstream"
+            echo "release is incompatible with our declared ranges, not that"
+            echo "anything in this repository changed."
+            echo
+            echo "Run: $RUN_URL"
+            echo
+            echo "<details><summary>Resolved versions</summary>"
+            echo
+            echo '```'
+            cat resolved.txt || true
+            echo '```'
+            echo "</details>"
+          } > body.md
+
+          EXISTING=$(gh issue list --state open --search "$ISSUE_TITLE in:title" \
+                       --json number --jq '.[0].number // empty')
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body-file body.md
+          else
+            gh issue create --title "$ISSUE_TITLE" --body-file body.md
+          fi
+
+      # The inverse. Without it the issue only ever opens, so after a
+      # transient failure "open" stops meaning "still broken" until a human
+      # triages it. A genuine break is never masked -- this step cannot run
+      # while the suite is failing.
+      - name: Close the tracking issue when the suite is green again
+        if: success()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          EXISTING=$(gh issue list --state open --search "$ISSUE_TITLE in:title" \
+                       --json number --jq '.[0].number // empty')
+          if [ -n "$EXISTING" ]; then
+            gh issue close "$EXISTING" \
+              --comment "The nightly unlocked-resolution job passed again: $RUN_URL"
+          fi

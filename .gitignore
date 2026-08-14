@@ -25,6 +25,8 @@ venv-test
 tmp
 var
 _skbuild
-uv.lock
+# uv.lock is COMMITTED, not ignored -- it is what makes CI
+# deterministic. It does not affect anyone installing this package;
+# a lock is ignored entirely by pip/uv when resolving a dependency.
 .nox
 .claude

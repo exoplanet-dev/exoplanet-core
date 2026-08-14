@@ -42,6 +42,41 @@ benchmark = [
 requires = ["scikit-build-core", "numpy", "pybind11"]
 build-backend = "scikit_build_core.build"
 
+[tool.uv]
+# CI resolves through uv, so this section is what keeps that resolution
+# deterministic and honest. None of it reaches published metadata.
+
+# Never silently test against a pre-release. Without this, uv's default
+# ("if-necessary-or-explicit") reaches for one whenever that is the only way
+# to satisfy the constraints -- and it did: `test_pymc` failed with
+#
+#     AttributeError: module 'numpy' has no attribute 'row_stack'
+#
+# because uv had selected numba 0.63.0b1. Every FINAL numba caps numpy
+# against that call (0.66.0 -> numpy<2.5), but the beta declares only
+# numpy>=1.22, the cap having landed after it was published. So the resolver
+# paired an uncapped pre-release with numpy 2.5.2.
+prerelease = "disallow"
+
+# TEMPORARY, and self-deleting once PyTensor moves. There is currently no
+# way to have BOTH pytensor 3.x and numpy >= 2.5:
+#
+#     pytensor 3.x   caps numba <= 0.66.0
+#     numba <= 0.66.0 caps numpy < 2.5   (it calls overload(np.row_stack),
+#                                         and numpy removed row_stack in 2.5)
+#
+# numba fixed this in 0.67.0 by guarding that overload, and raised its own
+# cap to numpy < 2.6 -- but pytensor has not yet raised numba <= 0.66.0 to
+# match. Until it does, a resolver asked for the newest numpy has to
+# backtrack something, and uv chooses to drop pytensor to 2.x and pymc to
+# 5.x rather than to lower numpy. That resolves and passes, while quietly
+# no longer testing pymc 6 at all.
+#
+# Constraining numpy makes the intent explicit: keep the current pymc /
+# pytensor, and take the newest numpy that works with them. DELETE THIS once
+# pytensor allows numba 0.67.0.
+constraint-dependencies = ["numpy<2.5"]
+
 [tool.scikit-build]
 sdist.exclude = []
 sdist.include = ["src/exoplanet_core/exoplanet_core_version.py"]
