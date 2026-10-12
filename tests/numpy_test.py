@@ -66,3 +66,15 @@ def test_contact_points_shape_exception():
 
     with pytest.raises(ValueError):
         ops.contact_points(*args)
+
+
+@pytest.mark.parametrize("r", [0.01, 0.05, 0.1, 0.3, 0.5, 0.7, 0.9, 1.2])
+def test_quad_solution_vector_continuous_at_b_equals_r(r):
+    # The special case b == r is taken for |b - r| <= eps; the solution vector
+    # must be continuous across it, from both sides.
+    eps = np.finfo(float).eps
+    b = r + np.arange(-64, 65) * np.spacing(r)
+    b = b[np.abs(b - r) <= 4 * eps]
+    s = ops.quad_solution_vector(b, r + np.zeros_like(b))
+    s0 = ops.quad_solution_vector(np.array([r]), np.array([r]))
+    np.testing.assert_allclose(s, np.broadcast_to(s0, s.shape), atol=1e-10)
