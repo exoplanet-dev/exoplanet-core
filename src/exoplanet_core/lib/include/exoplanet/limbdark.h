@@ -119,6 +119,11 @@ EXOPLANET_INLINE_OR_DEVICE void quad_solution_vector(const Scalar eps, const Sca
   }
 
   // S[1]
+  // Lambda1 jumps by 2 pi at b = r; the step function in s[1] below cancels the jump.
+  // Both must treat b and r as equal under the same condition: the special case
+  // b == r (Cases 5-7) is taken for |b - r| <= eps, so the step is taken only
+  // where b < r by more than eps.
+  const bool b_is_r = is_close<Scalar>(b, r, eps);
   Scalar Lambda1 = 0;
   Scalar Eofk = 0;
   Scalar Em1mKdm = 0;
@@ -135,7 +140,7 @@ EXOPLANET_INLINE_OR_DEVICE void quad_solution_vector(const Scalar eps, const Sca
         // dsdb[1] = 0;
         dsdr[1] = -twopi * r * sqrt1mr2;
       }
-    } else if (is_close<Scalar>(b, r, eps)) {
+    } else if (b_is_r) {
       if (is_close<Scalar>(r, 0.5, eps)) {
         // Case 6
         Lambda1 = pi - 4 * one_third;
@@ -207,7 +212,7 @@ EXOPLANET_INLINE_OR_DEVICE void quad_solution_vector(const Scalar eps, const Sca
       }
     }
   }
-  s[1] = ((1.0 - int(r > b)) * twopi - Lambda1) * one_third;
+  s[1] = ((1.0 - int(r > b && !b_is_r)) * twopi - Lambda1) * one_third;
 
   // Special case
   if (is_close<Scalar>(b, 0, eps)) {
